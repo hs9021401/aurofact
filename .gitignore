@@ -1,0 +1,17 @@
+# Distribution packages
+dist/
+*.zip
+*.crx
+*.pem
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS / Editor temporary files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log

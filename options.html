@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>外掛設定 - AI 網頁重點總結 (多組 API 管理)</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-area">
+        <img src="icons/icon48.png" alt="Logo" class="logo-img">
+        <div>
+          <h1>AI 網頁重點總結</h1>
+          <p class="subtitle">管理與快速切換多組 LLM API 配置 (MiniMax / DeepSeek / OpenAI / Claude / Ollama)</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge">多組 API 自由切換</span>
+      </div>
+    </header>
+
+    <!-- Main Two-Column Layout -->
+    <div class="layout-grid">
+      <!-- Left Column: Profile List -->
+      <aside class="sidebar-card">
+        <div class="sidebar-header">
+          <h2>API 配置清單</h2>
+          <button type="button" id="btn-add-profile" class="btn-add-profile" title="新增一組 API 配置">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>新增配置</span>
+          </button>
+        </div>
+
+        <!-- Template Selector Dropdown / Menu -->
+        <div id="template-menu" class="template-menu" style="display: none;">
+          <div class="template-menu-title">選擇要新增的模型範本：</div>
+          <button type="button" class="template-item" data-template="minimax">
+            <span class="t-name">🟣 MiniMax-M3</span>
+            <span class="t-sub">Anthropic 協議</span>
+          </button>
+          <button type="button" class="template-item" data-template="deepseek">
+            <span class="t-name">🔵 DeepSeek-V3</span>
+            <span class="t-sub">OpenAI 協議</span>
+          </button>
+          <button type="button" class="template-item" data-template="openai">
+            <span class="t-name">🟢 GPT-4o-mini</span>
+            <span class="t-sub">OpenAI 官方協議</span>
+          </button>
+          <button type="button" class="template-item" data-template="claude">
+            <span class="t-name">🟠 Claude 3.5 Sonnet</span>
+            <span class="t-sub">Anthropic 協議</span>
+          </button>
+          <button type="button" class="template-item" data-template="ollama">
+            <span class="t-name">⚪ Ollama 本地模型</span>
+            <span class="t-sub">localhost:11434 (免 Key)</span>
+          </button>
+          <button type="button" class="template-item" data-template="custom">
+            <span class="t-name">⚙️ 自訂空白配置</span>
+            <span class="t-sub">自訂端點與模型</span>
+          </button>
+        </div>
+
+        <div class="profile-list" id="profile-list">
+          <!-- Dynamically populated profile items -->
+        </div>
+      </aside>
+
+      <!-- Right Column: Profile Editor -->
+      <main class="editor-column">
+        <section class="card" id="editor-card">
+          <!-- Editor Card Header -->
+          <div class="editor-header">
+            <div class="editor-header-left">
+              <h2 id="editing-profile-title">編輯配置</h2>
+              <span id="active-status-badge" class="badge-active-status">使用中</span>
+            </div>
+            <div class="editor-header-actions">
+              <button type="button" id="btn-set-active" class="btn-sub-action" title="將此配置設為當前預設使用">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>設為使用中</span>
+              </button>
+              <button type="button" id="btn-duplicate-profile" class="btn-sub-action" title="複製此配置">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>複製</span>
+              </button>
+              <button type="button" id="btn-delete-profile" class="btn-sub-action btn-danger" title="刪除此配置">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                <span>刪除</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Profile Name -->
+            <div class="form-group">
+              <label for="prof-name" class="form-label">
+                配置名稱 (Profile Display Name)
+                <span class="required">*</span>
+              </label>
+              <input type="text" id="prof-name" class="form-input" placeholder="例如：🟣 MiniMax-M3 或 辦公室專用 DeepSeek" required>
+            </div>
+
+            <!-- API Protocol -->
+            <div class="form-group">
+              <label for="prof-format" class="form-label">
+                API 協議格式 (Protocol Format)
+                <span class="required">*</span>
+              </label>
+              <select id="prof-format" class="form-select">
+                <option value="anthropic">Anthropic Messages API 格式 (MiniMax、Claude)</option>
+                <option value="openai">OpenAI Chat Completions API 格式 (OpenAI、DeepSeek、Groq、Ollama、OpenRouter)</option>
+              </select>
+            </div>
+
+            <!-- Endpoint URL -->
+            <div class="form-group">
+              <label for="prof-url" class="form-label">
+                API 端點 URL (Endpoint)
+                <span class="required">*</span>
+              </label>
+              <input type="url" id="prof-url" class="form-input" placeholder="https://api.minimaxi.com/anthropic/v1/messages" required>
+            </div>
+
+            <!-- API Key -->
+            <div class="form-group">
+              <label for="prof-key" class="form-label">
+                API Key (密鑰)
+                <span class="required">*</span>
+              </label>
+              <div class="input-wrapper input-with-action">
+                <input type="password" id="prof-key" class="form-input" placeholder="輸入 API Key (例：eyJhbGciOi... 或 sk-...)" autocomplete="off">
+                <button type="button" id="btn-toggle-key" class="btn-input-action" title="顯示/隱藏 API Key">
+                  <svg id="eye-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+              <div class="key-help">
+                <span id="key-status-badge" class="status-badge status-empty">尚未設定</span>
+                <a href="https://platform.minimaxi.com" target="_blank" rel="noopener noreferrer" id="key-help-link" class="help-link">前往 MiniMax 開放平台獲取 API Key ↗</a>
+              </div>
+            </div>
+
+            <!-- Model Name -->
+            <div class="form-group">
+              <label for="prof-model" class="form-label">
+                模型名稱 (Model Name)
+                <span class="required">*</span>
+              </label>
+              <input type="text" id="prof-model" class="form-input" placeholder="MiniMax-M3" required>
+            </div>
+
+            <!-- System Prompt -->
+            <div class="form-group">
+              <div class="label-row">
+                <label for="prof-prompt" class="form-label">系統提示詞 (System Prompt)</label>
+                <button type="button" id="btn-reset-prompt" class="btn-text-action">還原預設提示詞</button>
+              </div>
+              <textarea id="prof-prompt" class="form-textarea" rows="6" placeholder="輸入引導 AI 如何總結與回答的提示詞..."></textarea>
+            </div>
+
+            <!-- Max Tokens & Temperature -->
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="prof-max-tokens" class="form-label">
+                  最大輸出 Token
+                  <span id="val-max-tokens" class="val-display">2048</span>
+                </label>
+                <input type="range" id="prof-max-tokens" min="512" max="8192" step="256" value="2048" class="form-range">
+              </div>
+
+              <div class="form-group">
+                <label for="prof-temperature" class="form-label">
+                  生成溫度
+                  <span id="val-temperature" class="val-display">0.5</span>
+                </label>
+                <input type="range" id="prof-temperature" min="0.0" max="1.0" step="0.05" value="0.5" class="form-range">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Test Result Banner -->
+        <div id="test-result-box" class="test-result-box" style="display: none;"></div>
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+          <button type="button" id="btn-test-conn" class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span id="test-btn-text">測試此配置連線</span>
+          </button>
+
+          <button type="button" id="btn-save-all" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>儲存所有設定</span>
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
