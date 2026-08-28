@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>外掛設定 - AI 網頁重點總結 (多組 API 管理)</title>
+  <title id="page-title" data-i18n="pageTitle">外掛設定 - AI 網頁重點總結（多組 API 管理）</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
@@ -11,14 +11,23 @@
     <!-- Header -->
     <header class="header">
       <div class="logo-area">
-        <img src="icons/icon48.png" alt="Logo" class="logo-img">
+        <img src="icons/icon48.png" alt="外掛圖示" class="logo-img" data-i18n-alt="logoAlt">
         <div>
-          <h1>AI 網頁重點總結</h1>
-          <p class="subtitle">管理與快速切換多組 LLM API 配置 (MiniMax / DeepSeek / OpenAI / Claude / Ollama)</p>
+          <h1 data-i18n="appTitle">AI 網頁重點總結</h1>
+          <p class="subtitle" data-i18n="subtitle">管理與快速切換多組 LLM API 配置（MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI）</p>
         </div>
       </div>
-      <div class="header-badges">
-        <span class="badge">多組 API 自由切換</span>
+      <div class="header-actions">
+        <div class="language-switcher">
+          <label for="language-select" class="language-label" data-i18n="languageLabel">語言</label>
+          <select id="language-select" class="language-select" data-i18n-aria-label="languageLabel">
+            <option value="zh-TW" data-i18n="languageOptionZhTw">繁體中文</option>
+            <option value="en" data-i18n="languageOptionEn">英文</option>
+            <option value="ja" data-i18n="languageOptionJa">日文</option>
+            <option value="ko" data-i18n="languageOptionKo">韓文</option>
+          </select>
+        </div>
+        <span class="badge" data-i18n="multiProfileBadge">多組 API 自由切換</span>
       </div>
     </header>
 
@@ -27,39 +36,43 @@
       <!-- Left Column: Profile List -->
       <aside class="sidebar-card">
         <div class="sidebar-header">
-          <h2>API 配置清單</h2>
-          <button type="button" id="btn-add-profile" class="btn-add-profile" title="新增一組 API 配置">
+          <h2 data-i18n="profilesHeading">API 配置清單</h2>
+          <button type="button" id="btn-add-profile" class="btn-add-profile" title="新增一組 API 配置" data-i18n-title="addProfileTitle">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            <span>新增配置</span>
+            <span data-i18n="addProfile">新增配置</span>
           </button>
         </div>
 
         <!-- Template Selector Dropdown / Menu -->
         <div id="template-menu" class="template-menu" style="display: none;">
-          <div class="template-menu-title">選擇要新增的模型範本：</div>
+          <div class="template-menu-title" data-i18n="templateMenuTitle">選擇要新增的模型範本：</div>
           <button type="button" class="template-item" data-template="minimax">
-            <span class="t-name">🟣 MiniMax-M3</span>
-            <span class="t-sub">Anthropic 協議</span>
+            <span class="t-name" data-i18n="templateMinimaxName">🟣 MiniMax-M3</span>
+            <span class="t-sub" data-i18n="templateMinimaxSub">Anthropic 協議</span>
           </button>
           <button type="button" class="template-item" data-template="deepseek">
-            <span class="t-name">🔵 DeepSeek-V3</span>
-            <span class="t-sub">OpenAI 協議</span>
+            <span class="t-name" data-i18n="templateDeepseekName">🔵 DeepSeek V4 Flash</span>
+            <span class="t-sub" data-i18n="templateDeepseekSub">OpenAI 協議</span>
           </button>
           <button type="button" class="template-item" data-template="openai">
-            <span class="t-name">🟢 GPT-4o-mini</span>
-            <span class="t-sub">OpenAI 官方協議</span>
+            <span class="t-name" data-i18n="templateOpenaiName">🟢 GPT-5.6 Luna</span>
+            <span class="t-sub" data-i18n="templateOpenaiSub">OpenAI 官方協議</span>
           </button>
           <button type="button" class="template-item" data-template="claude">
-            <span class="t-name">🟠 Claude 3.5 Sonnet</span>
-            <span class="t-sub">Anthropic 協議</span>
+            <span class="t-name" data-i18n="templateClaudeName">🟠 Claude Sonnet 5</span>
+            <span class="t-sub" data-i18n="templateClaudeSub">Anthropic 協議</span>
           </button>
           <button type="button" class="template-item" data-template="ollama">
-            <span class="t-name">⚪ Ollama 本地模型</span>
-            <span class="t-sub">localhost:11434 (免 Key)</span>
+            <span class="t-name" data-i18n="templateOllamaName">⚪ Ollama · Gemma 4 12B</span>
+            <span class="t-sub" data-i18n="templateOllamaSub">localhost:11434（免 Key）</span>
+          </button>
+          <button type="button" class="template-item" data-template="zai">
+            <span class="t-name" data-i18n="templateZaiName">🟡 Z.AI GLM-5.3</span>
+            <span class="t-sub" data-i18n="templateZaiSub">OpenAI 相容協議</span>
           </button>
           <button type="button" class="template-item" data-template="custom">
-            <span class="t-name">⚙️ 自訂空白配置</span>
-            <span class="t-sub">自訂端點與模型</span>
+            <span class="t-name" data-i18n="templateCustomName">⚙️ 自訂空白配置</span>
+            <span class="t-sub" data-i18n="templateCustomSub">自訂端點與模型</span>
           </button>
         </div>
 
@@ -74,21 +87,21 @@
           <!-- Editor Card Header -->
           <div class="editor-header">
             <div class="editor-header-left">
-              <h2 id="editing-profile-title">編輯配置</h2>
-              <span id="active-status-badge" class="badge-active-status">使用中</span>
+              <h2 id="editing-profile-title" data-i18n="editingProfileEmpty">編輯配置</h2>
+              <span id="active-status-badge" class="badge-active-status" data-i18n="activeInitial">使用中</span>
             </div>
             <div class="editor-header-actions">
-              <button type="button" id="btn-set-active" class="btn-sub-action" title="將此配置設為當前預設使用">
+              <button type="button" id="btn-set-active" class="btn-sub-action" title="將此配置設為當前預設使用" data-i18n-title="setActiveTitle">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>設為使用中</span>
+                <span data-i18n="setActive">設為使用中</span>
               </button>
-              <button type="button" id="btn-duplicate-profile" class="btn-sub-action" title="複製此配置">
+              <button type="button" id="btn-duplicate-profile" class="btn-sub-action" title="複製此配置" data-i18n-title="duplicateTitle">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                <span>複製</span>
+                <span data-i18n="duplicate">複製</span>
               </button>
-              <button type="button" id="btn-delete-profile" class="btn-sub-action btn-danger" title="刪除此配置">
+              <button type="button" id="btn-delete-profile" class="btn-sub-action btn-danger" title="刪除此配置" data-i18n-title="deleteTitle">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                <span>刪除</span>
+                <span data-i18n="delete">刪除</span>
               </button>
             </div>
           </div>
@@ -97,42 +110,42 @@
             <!-- Profile Name -->
             <div class="form-group">
               <label for="prof-name" class="form-label">
-                配置名稱 (Profile Display Name)
+                <span data-i18n="profileNameLabel">配置名稱（Profile Display Name）</span>
                 <span class="required">*</span>
               </label>
-              <input type="text" id="prof-name" class="form-input" placeholder="例如：🟣 MiniMax-M3 或 辦公室專用 DeepSeek" required>
+              <input type="text" id="prof-name" class="form-input" placeholder="例如：🟣 MiniMax-M3 或辦公室專用 DeepSeek" data-i18n-placeholder="profileNamePlaceholder" required>
             </div>
 
             <!-- API Protocol -->
             <div class="form-group">
               <label for="prof-format" class="form-label">
-                API 協議格式 (Protocol Format)
+                <span data-i18n="protocolFormatLabel">API 協議格式（Protocol Format）</span>
                 <span class="required">*</span>
               </label>
               <select id="prof-format" class="form-select">
-                <option value="anthropic">Anthropic Messages API 格式 (MiniMax、Claude)</option>
-                <option value="openai">OpenAI Chat Completions API 格式 (OpenAI、DeepSeek、Groq、Ollama、OpenRouter)</option>
+                <option value="anthropic" data-i18n="anthropicOption">Anthropic Messages API 格式（MiniMax、Claude）</option>
+                <option value="openai" data-i18n="openaiOption">OpenAI Chat Completions API 格式（OpenAI、DeepSeek、Z.AI、Groq、Ollama、OpenRouter）</option>
               </select>
             </div>
 
             <!-- Endpoint URL -->
             <div class="form-group">
               <label for="prof-url" class="form-label">
-                API 端點 URL (Endpoint)
+                <span data-i18n="endpointLabel">API 端點 URL（Endpoint）</span>
                 <span class="required">*</span>
               </label>
-              <input type="url" id="prof-url" class="form-input" placeholder="https://api.minimaxi.com/anthropic/v1/messages" required>
+              <input type="url" id="prof-url" class="form-input" placeholder="https://api.minimaxi.com/anthropic/v1/messages" data-i18n-placeholder="endpointPlaceholder" required>
             </div>
 
             <!-- API Key -->
             <div class="form-group">
               <label for="prof-key" class="form-label">
-                API Key (密鑰)
+                <span data-i18n="apiKeyLabel">API Key（密鑰）</span>
                 <span class="required">*</span>
               </label>
               <div class="input-wrapper input-with-action">
-                <input type="password" id="prof-key" class="form-input" placeholder="輸入 API Key (例：eyJhbGciOi... 或 sk-...)" autocomplete="off">
-                <button type="button" id="btn-toggle-key" class="btn-input-action" title="顯示/隱藏 API Key">
+                <input type="password" id="prof-key" class="form-input" placeholder="輸入 API Key（例：eyJhbGciOi... 或 sk-...）" data-i18n-placeholder="apiKeyPlaceholder" autocomplete="off">
+                <button type="button" id="btn-toggle-key" class="btn-input-action" title="顯示／隱藏 API Key" data-i18n-title="toggleKeyTitle" data-i18n-aria-label="toggleKeyTitle">
                   <svg id="eye-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
@@ -140,34 +153,34 @@
                 </button>
               </div>
               <div class="key-help">
-                <span id="key-status-badge" class="status-badge status-empty">尚未設定</span>
-                <a href="https://platform.minimaxi.com" target="_blank" rel="noopener noreferrer" id="key-help-link" class="help-link">前往 MiniMax 開放平台獲取 API Key ↗</a>
+                <span id="key-status-badge" class="status-badge status-empty" data-i18n="keyNotSet">尚未設定</span>
+                <a href="https://platform.minimaxi.com" target="_blank" rel="noopener noreferrer" id="key-help-link" class="help-link" data-i18n="helpMinimax">前往 MiniMax 開放平台獲取 API Key ↗</a>
               </div>
             </div>
 
             <!-- Model Name -->
             <div class="form-group">
               <label for="prof-model" class="form-label">
-                模型名稱 (Model Name)
+                <span data-i18n="modelNameLabel">模型名稱（Model Name）</span>
                 <span class="required">*</span>
               </label>
-              <input type="text" id="prof-model" class="form-input" placeholder="MiniMax-M3" required>
+              <input type="text" id="prof-model" class="form-input" placeholder="MiniMax-M3" data-i18n-placeholder="modelPlaceholder" required>
             </div>
 
             <!-- System Prompt -->
             <div class="form-group">
               <div class="label-row">
-                <label for="prof-prompt" class="form-label">系統提示詞 (System Prompt)</label>
-                <button type="button" id="btn-reset-prompt" class="btn-text-action">還原預設提示詞</button>
+                <label for="prof-prompt" class="form-label"><span data-i18n="systemPromptLabel">系統提示詞（System Prompt）</span></label>
+                <button type="button" id="btn-reset-prompt" class="btn-text-action" data-i18n="resetPrompt">還原預設提示詞</button>
               </div>
-              <textarea id="prof-prompt" class="form-textarea" rows="6" placeholder="輸入引導 AI 如何總結與回答的提示詞..."></textarea>
+              <textarea id="prof-prompt" class="form-textarea" rows="6" placeholder="輸入引導 AI 如何總結與回答的提示詞…" data-i18n-placeholder="systemPromptPlaceholder"></textarea>
             </div>
 
             <!-- Max Tokens & Temperature -->
             <div class="form-grid">
               <div class="form-group">
                 <label for="prof-max-tokens" class="form-label">
-                  最大輸出 Token
+                  <span data-i18n="maxTokensLabel">最大輸出 Token</span>
                   <span id="val-max-tokens" class="val-display">2048</span>
                 </label>
                 <input type="range" id="prof-max-tokens" min="512" max="8192" step="256" value="2048" class="form-range">
@@ -175,7 +188,7 @@
 
               <div class="form-group">
                 <label for="prof-temperature" class="form-label">
-                  生成溫度
+                  <span data-i18n="temperatureLabel">生成溫度</span>
                   <span id="val-temperature" class="val-display">0.5</span>
                 </label>
                 <input type="range" id="prof-temperature" min="0.0" max="1.0" step="0.05" value="0.5" class="form-range">
@@ -185,7 +198,7 @@
         </section>
 
         <!-- Test Result Banner -->
-        <div id="test-result-box" class="test-result-box" style="display: none;"></div>
+        <div id="test-result-box" class="test-result-box" role="status" aria-live="polite" style="display: none;"></div>
 
         <!-- Action Bar -->
         <div class="action-bar">
@@ -193,7 +206,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
-            <span id="test-btn-text">測試此配置連線</span>
+            <span id="test-btn-text" data-i18n="testConnection">測試此配置連線</span>
           </button>
 
           <button type="button" id="btn-save-all" class="btn btn-primary">
@@ -202,16 +215,17 @@
               <polyline points="17 21 17 13 7 13 7 21"></polyline>
               <polyline points="7 3 7 8 15 8"></polyline>
             </svg>
-            <span>儲存所有設定</span>
+            <span data-i18n="saveAll">儲存所有設定</span>
           </button>
         </div>
       </main>
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

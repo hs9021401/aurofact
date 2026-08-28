@@ -1,86 +1,84 @@
 // options.js - Multi-Profile API Management Logic
 
-const DEFAULT_SYSTEM_PROMPT = `你是一個專業的內容分析與深入探討助手。請針對使用者提供的網頁內容或選取文字進行精準、結構清晰的繁體中文分析與解答。
+const I18N = globalThis.WebSummarizerI18n;
 
-初次總結時請遵循以下格式：
-### 📌 核心主旨
-用 1-2 句話概括全文最重要的核心主旨。
-
-### 💡 關鍵重點摘要
-- 條列 3 至 6 個關鍵要點。
-- 若有重要數據、關鍵結論或步驟請以**粗體**標註。
-
-### 🎯 結論與洞見
-簡短總結作者結論、實用建議或關鍵價值。
-
-在後續多輪對話中，請結合網頁原文與先前的總結，深入、親切且專業地回答使用者的延伸問題。`;
+if (!I18N) {
+  throw new Error("Shared i18n data was not loaded.");
+}
 
 const TEMPLATES = {
   minimax: {
-    name: "🟣 MiniMax-M3",
     apiFormat: "anthropic",
     apiUrl: "https://api.minimaxi.com/anthropic/v1/messages",
     apiKey: "",
     model: "MiniMax-M3",
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
     maxTokens: 2048,
     temperature: 0.5
   },
   deepseek: {
-    name: "🔵 DeepSeek-V3",
     apiFormat: "openai",
     apiUrl: "https://api.deepseek.com/chat/completions",
     apiKey: "",
-    model: "deepseek-chat",
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    model: "deepseek-v4-flash",
     maxTokens: 2048,
     temperature: 0.5
   },
   openai: {
-    name: "🟢 GPT-4o-mini",
     apiFormat: "openai",
     apiUrl: "https://api.openai.com/v1/chat/completions",
     apiKey: "",
-    model: "gpt-4o-mini",
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    model: "gpt-5.6-luna",
     maxTokens: 2048,
     temperature: 0.5
   },
   claude: {
-    name: "🟠 Claude 3.5 Sonnet",
     apiFormat: "anthropic",
     apiUrl: "https://api.anthropic.com/v1/messages",
     apiKey: "",
-    model: "claude-3-5-sonnet-20241022",
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    model: "claude-sonnet-5",
     maxTokens: 2048,
     temperature: 0.5
   },
   ollama: {
-    name: "⚪ Ollama (本地免 Key)",
     apiFormat: "openai",
     apiUrl: "http://localhost:11434/v1/chat/completions",
     apiKey: "",
-    model: "llama3.2",
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    model: "gemma4:12b",
+    maxTokens: 2048,
+    temperature: 0.5
+  },
+  zai: {
+    apiFormat: "openai",
+    apiUrl: "https://api.z.ai/api/paas/v4/chat/completions",
+    apiKey: "",
+    model: "glm-5.3",
     maxTokens: 2048,
     temperature: 0.5
   },
   custom: {
-    name: "⚙️ 自訂模型配置",
     apiFormat: "openai",
     apiUrl: "https://api.openai.com/v1/chat/completions",
     apiKey: "",
     model: "custom-model",
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
     maxTokens: 2048,
     temperature: 0.5
   }
 };
 
+const TEMPLATE_NAME_KEYS = Object.freeze({
+  minimax: "templateMinimaxName",
+  deepseek: "templateDeepseekName",
+  openai: "templateOpenaiName",
+  claude: "templateClaudeName",
+  ollama: "templateOllamaName",
+  zai: "templateZaiName",
+  custom: "templateCustomName"
+});
+
 let profiles = [];
 let activeProfileId = "";
 let selectedProfileId = "";
+let currentLocale = I18N.defaultLocale;
 
 document.addEventListener("DOMContentLoaded", () => {
   const profileListEl = document.getElementById("profile-list");
@@ -113,18 +111,145 @@ document.addEventListener("DOMContentLoaded", () => {
   const testBtnText = document.getElementById("test-btn-text");
   const btnSaveAll = document.getElementById("btn-save-all");
   const toast = document.getElementById("toast");
+  const languageSelect = document.getElementById("language-select");
 
-  // Load profiles from background/storage
-  chrome.runtime.sendMessage({ action: "GET_PROFILES" }, (response) => {
-    if (response && response.success) {
-      profiles = response.profiles || [];
-      activeProfileId = response.activeProfileId || profiles[0]?.id || "";
-      selectedProfileId = activeProfileId;
-
-      renderProfileList();
-      loadProfileToEditor(selectedProfileId);
-    }
+  languageSelect.addEventListener("change", () => {
+    changeLocale(languageSelect.value);
   });
+
+  // Load the selected UI locale before profiles so default prompts are localized on first render.
+  chrome.storage.sync.get(["uiLocale"], (items) => {
+    currentLocale = I18N.normalizeLocale(items.uiLocale);
+    applyTranslations();
+
+    // Load profiles from background/storage
+    chrome.runtime.sendMessage({ action: "GET_PROFILES" }, (response) => {
+      if (response && response.success) {
+        profiles = (response.profiles || []).map((profile) => ({ ...profile }));
+        activeProfileId = response.activeProfileId || profiles[0]?.id || "";
+        selectedProfileId = activeProfileId;
+
+        migrateManagedPrompts();
+        migrateManagedProfileNames();
+        renderProfileList();
+        loadProfileToEditor(selectedProfileId);
+      }
+    });
+  });
+
+  function t(key, values = {}) {
+    return I18N.translate(currentLocale, key, values);
+  }
+
+  function getDefaultSystemPrompt() {
+    return I18N.getPrompt(currentLocale);
+  }
+
+  function applyTranslations() {
+    const locale = I18N.getLocale(currentLocale);
+    document.documentElement.lang = locale.htmlLang;
+    document.title = t("pageTitle");
+    languageSelect.value = currentLocale;
+
+    document.querySelectorAll("[data-i18n]").forEach((element) => {
+      element.textContent = t(element.getAttribute("data-i18n"));
+    });
+
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+      element.placeholder = t(element.getAttribute("data-i18n-placeholder"));
+    });
+
+    document.querySelectorAll("[data-i18n-title]").forEach((element) => {
+      element.title = t(element.getAttribute("data-i18n-title"));
+    });
+
+    document.querySelectorAll("[data-i18n-alt]").forEach((element) => {
+      element.alt = t(element.getAttribute("data-i18n-alt"));
+    });
+
+    document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
+      element.setAttribute("aria-label", t(element.getAttribute("data-i18n-aria-label")));
+    });
+
+    testBtnText.textContent = btnTestConn.disabled ? t("testRunningButton") : t("testConnection");
+  }
+
+  function changeLocale(nextLocale) {
+    const normalizedLocale = I18N.normalizeLocale(nextLocale);
+    if (normalizedLocale === currentLocale) {
+      applyTranslations();
+      return;
+    }
+
+    saveCurrentEditorToMemory();
+    currentLocale = normalizedLocale;
+    migrateManagedPrompts();
+    migrateManagedProfileNames();
+    applyTranslations();
+    renderProfileList();
+    loadProfileToEditor(selectedProfileId);
+
+    chrome.runtime.sendMessage({ action: "SET_UI_LOCALE", locale: currentLocale }, (response) => {
+      if (chrome.runtime.lastError || !response?.success) {
+        chrome.storage.sync.set({ uiLocale: currentLocale });
+      }
+      showToast(t("languageChanged", { language: I18N.getLocale(currentLocale).label }));
+    });
+  }
+
+  function migrateManagedPrompts() {
+    profiles.forEach((profile) => {
+      const prompt = (profile.systemPrompt || "").trim();
+      const mode = profile.systemPromptMode || (I18N.isDefaultPrompt(prompt) ? "default" : "custom");
+
+      if (mode === "default") {
+        profile.systemPrompt = getDefaultSystemPrompt();
+        profile.systemPromptMode = "default";
+        profile.systemPromptLocale = currentLocale;
+      } else {
+        profile.systemPromptMode = "custom";
+        delete profile.systemPromptLocale;
+      }
+    });
+  }
+
+  function migrateManagedProfileNames() {
+    const legacyTemplateNames = {
+      "🟣 MiniMax-M3": "minimax",
+      "🔵 DeepSeek-V3": "deepseek",
+      "🔵 DeepSeek V4 Flash": "deepseek",
+      "🟢 GPT-4o-mini": "openai",
+      "🟢 GPT-5.6 Luna": "openai",
+      "🟠 Claude 3.5 Sonnet": "claude",
+      "🟠 Claude Sonnet 5": "claude",
+      "⚪ Ollama (本地免 Key)": "ollama",
+      "⚪ Ollama（本地免 Key）": "ollama",
+      "⚪ Ollama · Gemma 4 12B": "ollama",
+      "🟡 Z.AI GLM-5.3": "zai",
+      "🟡 GLM-5.3": "zai",
+      "⚙️ 自訂模型配置": "custom",
+      "⚙️ 自訂空白配置": "custom"
+    };
+
+    profiles.forEach((profile) => {
+      const templateKey = profile.profileNameTemplate ||
+        (profile.profileNameMode !== "custom" ? legacyTemplateNames[profile.name] : "");
+      const mode = profile.profileNameMode || (templateKey ? "default" : "custom");
+
+      if (mode === "default" && TEMPLATE_NAME_KEYS[templateKey]) {
+        profile.name = getTemplateName(templateKey);
+        profile.profileNameMode = "default";
+        profile.profileNameTemplate = templateKey;
+      } else {
+        profile.profileNameMode = "custom";
+        delete profile.profileNameTemplate;
+      }
+    });
+  }
+
+  function getTemplateName(templateKey) {
+    return t(TEMPLATE_NAME_KEYS[templateKey] || TEMPLATE_NAME_KEYS.custom);
+  }
 
   // Render Sidebar Profile List
   function renderProfileList() {
@@ -138,18 +263,20 @@ document.addEventListener("DOMContentLoaded", () => {
       item.className = `profile-item ${isSelected ? "selected" : ""}`;
       item.setAttribute("data-id", p.id);
 
-      const formatLabel = p.apiFormat === "anthropic" ? "Anthropic" : "OpenAI";
+      const formatLabel = p.apiFormat === "anthropic" ? t("protocolAnthropic") : t("protocolOpenAI");
+      const profileName = p.name || t("unnamedProfile");
+      const modelName = p.model || t("unsetModel");
 
       item.innerHTML = `
         <div class="prof-info">
-          <span class="prof-title">${escapeHtml(p.name || "未命名配置")}</span>
+          <span class="prof-title">${escapeHtml(profileName)}</span>
           <div class="prof-meta">
             <span class="prof-tag">${formatLabel}</span>
-            <span>${escapeHtml(p.model || "未設定模型")}</span>
+            <span>${escapeHtml(modelName)}</span>
           </div>
         </div>
         <div>
-          ${isActive ? '<span class="prof-active-pill">● 使用中</span>' : ""}
+          ${isActive ? `<span class="prof-active-pill">${t("activePill")}</span>` : ""}
         </div>
       `;
 
@@ -169,15 +296,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const p = profiles.find((item) => item.id === profileId);
     if (!p) return;
 
-    editingProfileTitle.textContent = `編輯：${p.name || "未命名配置"}`;
+    editingProfileTitle.textContent = t("editingProfile", { name: p.name || t("unnamedProfile") });
     
     const isActive = p.id === activeProfileId;
     if (isActive) {
-      activeStatusBadge.textContent = "● 預設使用中";
+      activeStatusBadge.textContent = t("activeDefault");
       activeStatusBadge.className = "badge-active-status";
       btnSetActive.style.display = "none";
     } else {
-      activeStatusBadge.textContent = "未啟用";
+      activeStatusBadge.textContent = t("inactive");
       activeStatusBadge.className = "badge-active-status inactive";
       btnSetActive.style.display = "inline-flex";
     }
@@ -187,7 +314,12 @@ document.addEventListener("DOMContentLoaded", () => {
     profUrlInput.value = p.apiUrl || "";
     profKeyInput.value = p.apiKey || "";
     profModelInput.value = p.model || "";
-    profPromptInput.value = p.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+    if (!p.systemPrompt) {
+      p.systemPrompt = getDefaultSystemPrompt();
+      p.systemPromptMode = "default";
+      p.systemPromptLocale = currentLocale;
+    }
+    profPromptInput.value = p.systemPrompt;
     
     profMaxTokensRange.value = p.maxTokens || 2048;
     valMaxTokens.textContent = profMaxTokensRange.value;
@@ -205,12 +337,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const p = profiles.find((item) => item.id === selectedProfileId);
     if (!p) return;
 
-    p.name = profNameInput.value.trim() || "未命名配置";
+    p.name = profNameInput.value.trim();
     p.apiFormat = profFormatSelect.value;
     p.apiUrl = profUrlInput.value.trim();
     p.apiKey = profKeyInput.value.trim();
     p.model = profModelInput.value.trim();
-    p.systemPrompt = profPromptInput.value.trim() || DEFAULT_SYSTEM_PROMPT;
+    const systemPrompt = profPromptInput.value.trim();
+    p.systemPrompt = systemPrompt || getDefaultSystemPrompt();
+    const isManagedDefault = !systemPrompt || (p.systemPromptMode !== "custom" && I18N.isDefaultPrompt(systemPrompt));
+    if (isManagedDefault) {
+      p.systemPromptMode = "default";
+      p.systemPromptLocale = currentLocale;
+    } else {
+      p.systemPromptMode = "custom";
+      delete p.systemPromptLocale;
+    }
     p.maxTokens = parseInt(profMaxTokensRange.value, 10);
     p.temperature = parseFloat(profTemperatureRange.value);
   }
@@ -220,6 +361,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const p = profiles.find((item) => item.id === selectedProfileId);
     if (p) {
       p.name = profNameInput.value;
+      p.profileNameMode = "custom";
+      delete p.profileNameTemplate;
       renderProfileList();
     }
   });
@@ -281,38 +424,51 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateKeyStatus(key, url) {
     const isOllama = url && url.includes("localhost");
     if (isOllama) {
-      keyStatusBadge.textContent = "本地免 Key";
+      keyStatusBadge.textContent = t("localNoKey");
       keyStatusBadge.className = "status-badge status-saved";
     } else if (key && key.trim().length > 0) {
-      keyStatusBadge.textContent = "已輸入 Key";
+      keyStatusBadge.textContent = t("keyEntered");
       keyStatusBadge.className = "status-badge status-saved";
     } else {
-      keyStatusBadge.textContent = "尚未設定";
+      keyStatusBadge.textContent = t("keyNotSet");
       keyStatusBadge.className = "status-badge status-empty";
     }
   }
 
   function updateHelpLink(url) {
-    if (!url) return;
+    if (!url) {
+      keyHelpLink.textContent = t("helpGeneric");
+      keyHelpLink.removeAttribute("href");
+      keyHelpLink.style.display = "inline";
+      return;
+    }
     if (url.includes("deepseek")) {
-      keyHelpLink.textContent = "前往 DeepSeek 開放平台獲取 API Key ↗";
+      keyHelpLink.textContent = t("helpDeepseek");
       keyHelpLink.href = "https://platform.deepseek.com";
       keyHelpLink.style.display = "inline";
     } else if (url.includes("openai")) {
-      keyHelpLink.textContent = "前往 OpenAI Platform 獲取 API Key ↗";
+      keyHelpLink.textContent = t("helpOpenai");
       keyHelpLink.href = "https://platform.openai.com/api-keys";
       keyHelpLink.style.display = "inline";
     } else if (url.includes("anthropic")) {
-      keyHelpLink.textContent = "前往 Anthropic Console 獲取 API Key ↗";
+      keyHelpLink.textContent = t("helpAnthropic");
       keyHelpLink.href = "https://console.anthropic.com";
       keyHelpLink.style.display = "inline";
     } else if (url.includes("localhost") || url.includes("11434")) {
-      keyHelpLink.textContent = "Ollama 本地運行中 (無須金鑰)";
+      keyHelpLink.textContent = t("helpOllama");
       keyHelpLink.href = "https://ollama.com";
       keyHelpLink.style.display = "inline";
-    } else {
-      keyHelpLink.textContent = "前往 MiniMax 開放平台獲取 API Key ↗";
+    } else if (url.includes("z.ai")) {
+      keyHelpLink.textContent = t("helpZai");
+      keyHelpLink.href = "https://z.ai";
+      keyHelpLink.style.display = "inline";
+    } else if (url.includes("minimaxi")) {
+      keyHelpLink.textContent = t("helpMinimax");
       keyHelpLink.href = "https://platform.minimaxi.com";
+      keyHelpLink.style.display = "inline";
+    } else {
+      keyHelpLink.textContent = t("helpGeneric");
+      keyHelpLink.removeAttribute("href");
       keyHelpLink.style.display = "inline";
     }
   }
@@ -323,7 +479,7 @@ document.addEventListener("DOMContentLoaded", () => {
     activeProfileId = selectedProfileId;
     renderProfileList();
     loadProfileToEditor(selectedProfileId);
-    showToast("已將此配置設為當前預設！");
+    showToast(t("toastActive"));
   });
 
   // Duplicate Profile
@@ -334,24 +490,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const newProfile = JSON.parse(JSON.stringify(source));
     newProfile.id = "profile_" + Date.now();
-    newProfile.name = `${source.name} (副本)`;
+    newProfile.name = `${source.name || t("unnamedProfile")}${t("duplicateSuffix")}`;
+    newProfile.profileNameMode = "custom";
+    delete newProfile.profileNameTemplate;
 
     profiles.push(newProfile);
     selectedProfileId = newProfile.id;
     renderProfileList();
     loadProfileToEditor(selectedProfileId);
-    showToast("已複製新配置！");
+    showToast(t("toastDuplicated"));
   });
 
   // Delete Profile
   btnDeleteProfile.addEventListener("click", () => {
     if (profiles.length <= 1) {
-      alert("至少必須保留一組 API 配置，無法刪除最後一組。");
+      alert(t("confirmKeepOne"));
       return;
     }
 
     const currentP = profiles.find((p) => p.id === selectedProfileId);
-    if (confirm(`確定要刪除「${currentP?.name || "此配置"}」嗎？`)) {
+    if (confirm(t("confirmDelete", { name: currentP?.name || t("unnamedProfile") }))) {
       profiles = profiles.filter((p) => p.id !== selectedProfileId);
       if (activeProfileId === selectedProfileId) {
         activeProfileId = profiles[0].id;
@@ -360,15 +518,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
       renderProfileList();
       loadProfileToEditor(selectedProfileId);
-      showToast("已刪除配置");
+      showToast(t("toastDeleted"));
     }
   });
 
   // Reset System Prompt
   btnResetPrompt.addEventListener("click", () => {
-    if (confirm("確定要將系統提示詞還原為預設範本嗎？")) {
-      profPromptInput.value = DEFAULT_SYSTEM_PROMPT;
-      showToast("已還原預設提示詞");
+    if (confirm(t("confirmResetPrompt"))) {
+      profPromptInput.value = getDefaultSystemPrompt();
+      const profile = profiles.find((item) => item.id === selectedProfileId);
+      if (profile) {
+        profile.systemPrompt = profPromptInput.value;
+        profile.systemPromptMode = "default";
+        profile.systemPromptLocale = currentLocale;
+      }
+      showToast(t("toastResetPrompt"));
     }
   });
 
@@ -391,6 +555,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const newP = JSON.parse(JSON.stringify(template));
       newP.id = "profile_" + Date.now();
+      newP.name = getTemplateName(tKey);
+      newP.profileNameMode = "default";
+      newP.profileNameTemplate = tKey;
+      newP.systemPrompt = getDefaultSystemPrompt();
+      newP.systemPromptMode = "default";
+      newP.systemPromptLocale = currentLocale;
       
       profiles.push(newP);
       selectedProfileId = newP.id;
@@ -398,7 +568,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       renderProfileList();
       loadProfileToEditor(selectedProfileId);
-      showToast(`已新增 ${newP.name} 配置！`);
+      showToast(t("toastAdded", { name: newP.name }));
     });
   });
 
@@ -407,45 +577,47 @@ document.addEventListener("DOMContentLoaded", () => {
     saveCurrentEditorToMemory();
     const currentP = profiles.find((p) => p.id === selectedProfileId);
     if (!currentP) return;
+    const currentProfileName = currentP.name || t("unnamedProfile");
 
     const isLocalOllama = currentP.apiUrl && currentP.apiUrl.includes("localhost");
 
     if (!currentP.apiKey && !isLocalOllama) {
-      showTestResult("error", `⚠️ 請先輸入「${currentP.name}」的 API Key 才能進行連線測試！`);
+      showTestResult("error", escapeHtml(t("testMissingKey", { name: currentProfileName })));
       profKeyInput.focus();
       return;
     }
 
     btnTestConn.disabled = true;
-    testBtnText.textContent = "連線測試中...";
-    showTestResult("loading", `⏳ 正在向 [${currentP.name}] 發送測試請求...`);
+    testBtnText.textContent = t("testRunningButton");
+    showTestResult("loading", escapeHtml(t("testRequesting", { name: currentProfileName })));
 
     try {
       const response = await chrome.runtime.sendMessage({
         action: "TEST_PROFILE_CONNECTION",
-        profile: currentP
+        profile: currentP,
+        locale: currentLocale
       });
 
       if (response && response.success) {
         showTestResult(
           "success",
-          `✅ <strong>[${escapeHtml(currentP.name)}] 連線成功！</strong><br>
-           • 協議格式：${currentP.apiFormat.toUpperCase()}<br>
-           • 模型響應：${response.model || currentP.model}<br>
-           • 延遲時間：${response.latency} ms<br>
-           • 測試回復：${escapeHtml(response.reply || "OK")}`
+          `<strong>${escapeHtml(t("testSuccessHeading", { name: currentProfileName }))}</strong><br>
+           • ${escapeHtml(t("testProtocol"))}：${escapeHtml((currentP.apiFormat || "").toUpperCase())}<br>
+           • ${escapeHtml(t("testModel"))}：${escapeHtml(response.model || currentP.model || "") }<br>
+           • ${escapeHtml(t("testLatency"))}：${escapeHtml(String(response.latency))} ms<br>
+           • ${escapeHtml(t("testReply"))}：${escapeHtml(response.reply || t("testReplyFallback"))}`
         );
       } else {
         showTestResult(
           "error",
-          `❌ <strong>連線失敗：</strong><br>${escapeHtml(response?.error || "未知錯誤，請檢查端點、金鑰與格式設定。")}`
+          `<strong>${escapeHtml(t("testFailedHeading"))}</strong><br>${escapeHtml(response?.error || t("testUnknownError"))}`
         );
       }
     } catch (err) {
-      showTestResult("error", `❌ 請求發送異常：${escapeHtml(err.message)}`);
+      showTestResult("error", escapeHtml(t("testRequestError", { message: err.message })));
     } finally {
       btnTestConn.disabled = false;
-      testBtnText.textContent = "測試此配置連線";
+      testBtnText.textContent = t("testConnection");
     }
   });
 
@@ -463,10 +635,11 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.runtime.sendMessage({
       action: "SAVE_ALL_PROFILES",
       profiles: profiles,
-      activeProfileId: activeProfileId
+      activeProfileId: activeProfileId,
+      uiLocale: currentLocale
     }, () => {
       btnSaveAll.disabled = false;
-      showToast("🎉 所有 API 配置已成功儲存！");
+      showToast(t("toastSaved"));
       renderProfileList();
       loadProfileToEditor(selectedProfileId);
     });
@@ -485,7 +658,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function escapeHtml(text) {
     if (!text) return "";
-    return text
+    return String(text)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");

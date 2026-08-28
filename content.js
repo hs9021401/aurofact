@@ -20,6 +20,14 @@
   let isDragging = false;
   let startX = 0, startY = 0;
   let initialLeft = 0, initialTop = 0;
+  let isResizing = false;
+  let resizeStartX = 0, resizeStartY = 0;
+  let resizeStartWidth = 0, resizeStartHeight = 0;
+  let resizeObserver = null;
+
+  const RESIZE_MIN_WIDTH = 360;
+  const RESIZE_MIN_HEIGHT = 360;
+  const VIEWPORT_MARGIN = 12;
 
   // Listen for trigger messages from background
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -104,6 +112,14 @@
       attachUIEvents();
       setInitialPosition();
 
+      const card = shadowRoot.getElementById("ws-main-card");
+      if (card && typeof ResizeObserver !== "undefined") {
+        resizeObserver = new ResizeObserver(() => {
+          clampPositionToBounds();
+        });
+        resizeObserver.observe(card);
+      }
+
       window.addEventListener("resize", clampPositionToBounds);
     }
     loadProfilesIntoHeader();
@@ -150,7 +166,7 @@
     hostElement.style.bottom = "auto";
   }
 
-  // Strict clamp ensuring the top header bar can NEVER go off-screen
+  // Keep the entire resizable card inside the viewport
   function clampPositionToBounds() {
     if (!hostElement || !shadowRoot) return;
     const card = shadowRoot.getElementById("ws-main-card");
@@ -162,13 +178,29 @@
     const minLeft = 10;
     const maxLeft = Math.max(10, window.innerWidth - cardWidth - 10);
     const minTop = 10;
-    const maxTop = Math.max(10, window.innerHeight - (card.classList.contains("ws-minimized") ? 52 : 60));
+    const maxTop = Math.max(10, window.innerHeight - cardHeight - VIEWPORT_MARGIN);
 
     currentLeft = Math.min(Math.max(minLeft, currentLeft), maxLeft);
     currentTop = Math.min(Math.max(minTop, currentTop), maxTop);
 
     hostElement.style.left = `${currentLeft}px`;
     hostElement.style.top = `${currentTop}px`;
+  }
+
+  function getResizeConstraints() {
+    const maxWidth = Math.max(0, window.innerWidth - VIEWPORT_MARGIN * 2);
+    const maxHeight = Math.max(0, window.innerHeight - VIEWPORT_MARGIN * 2);
+
+    return {
+      minWidth: Math.min(RESIZE_MIN_WIDTH, maxWidth),
+      maxWidth,
+      minHeight: Math.min(RESIZE_MIN_HEIGHT, maxHeight),
+      maxHeight
+    };
+  }
+
+  function clampDimension(value, min, max) {
+    return Math.min(Math.max(value, min), max);
   }
 
   // Build the complete Shadow DOM HTML
@@ -291,6 +323,13 @@
           </button>
         </div>
       </div>
+
+      <!-- Bottom-right Resize Handle -->
+      <div class="ws-resize-handle" id="ws-resize-handle" title="拖曳以調整視窗大小" aria-label="拖曳以調整視窗大小">
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          <path d="M13 1L1 13M13 6L6 13M13 11L11 13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+        </svg>
+      </div>
     `;
 
     shadowRoot.appendChild(container);
@@ -317,18 +356,26 @@
 
       .ws-card {
         width: 480px;
+        min-width: min(360px, calc(100vw - 24px));
         max-width: calc(100vw - 24px);
         height: 620px;
+        min-height: min(360px, calc(100vh - 24px));
         max-height: calc(100vh - 24px);
         background: #ffffff;
         border-radius: 14px;
         box-shadow: 0 20px 44px -10px rgba(0, 0, 0, 0.22), 0 0 1px 1px rgba(0, 0, 0, 0.08);
         display: flex;
         flex-direction: column;
+        position: relative;
         overflow: hidden;
         transition: height 0.25s ease;
         animation: ws-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         border: 1px solid rgba(226, 232, 240, 0.9);
+      }
+
+      .ws-card.ws-resizing {
+        transition: none;
+        user-select: none;
       }
 
       .ws-card.ws-minimized {
@@ -830,7 +877,7 @@
         min-height: 40px;
         background: #ffffff;
         border-top: 1px solid #f1f5f9;
-        padding: 0 10px;
+        padding: 0 26px 0 10px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -888,6 +935,33 @@
 
       .ws-btn-action.ws-btn-primary:hover { background: #4338ca; }
       .ws-btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      /* Bottom-right Resize Handle */
+      .ws-resize-handle {
+        position: absolute;
+        right: 1px;
+        bottom: 1px;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding: 3px;
+        color: #94a3b8;
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 8px 0 0 0;
+        cursor: nwse-resize;
+        touch-action: none;
+        z-index: 20;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+
+      .ws-resize-handle:hover {
+        color: #4f46e5;
+        background: #eef2ff;
+      }
+
+      .ws-card.ws-minimized .ws-resize-handle { display: none; }
     `;
   }
 
@@ -909,6 +983,11 @@
     // Close
     btnClose.addEventListener("click", () => {
       stopCurrentGeneration();
+      stopResize();
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
+      }
       if (hostElement) {
         hostElement.remove();
         hostElement = null;
@@ -1018,6 +1097,7 @@
     // Attach dual drag handles (Top Header + Bottom Footer)
     bindDragHandle(dragHandleTop);
     bindDragHandle(dragHandleBottom);
+    bindResizeHandle(shadowRoot.getElementById("ws-resize-handle"));
 
     function bindDragHandle(el) {
       el.addEventListener("mousedown", (e) => {
@@ -1049,7 +1129,7 @@
       const minLeft = 10;
       const maxLeft = Math.max(10, window.innerWidth - cardWidth - 10);
       const minTop = 10;
-      const maxTop = Math.max(10, window.innerHeight - 56);
+      const maxTop = Math.max(10, window.innerHeight - cardHeight - VIEWPORT_MARGIN);
 
       currentLeft = Math.min(Math.max(minLeft, initialLeft + deltaX), maxLeft);
       currentTop = Math.min(Math.max(minTop, initialTop + deltaY), maxTop);
@@ -1064,6 +1144,62 @@
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
       }
+    }
+
+    function bindResizeHandle(el) {
+      if (!el) return;
+
+      el.addEventListener("mousedown", (e) => {
+        if (e.button !== 0 || card.classList.contains("ws-minimized")) return;
+
+        const rect = card.getBoundingClientRect();
+        isResizing = true;
+        resizeStartX = e.clientX;
+        resizeStartY = e.clientY;
+        resizeStartWidth = rect.width;
+        resizeStartHeight = rect.height;
+        card.classList.add("ws-resizing");
+
+        document.addEventListener("mousemove", onResizeMove);
+        document.addEventListener("mouseup", onResizeUp);
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    }
+
+    function onResizeMove(e) {
+      if (!isResizing) return;
+
+      const constraints = getResizeConstraints();
+      const nextWidth = clampDimension(
+        resizeStartWidth + e.clientX - resizeStartX,
+        constraints.minWidth,
+        constraints.maxWidth
+      );
+      const nextHeight = clampDimension(
+        resizeStartHeight + e.clientY - resizeStartY,
+        constraints.minHeight,
+        constraints.maxHeight
+      );
+
+      card.style.width = `${Math.round(nextWidth)}px`;
+      card.style.height = `${Math.round(nextHeight)}px`;
+      clampPositionToBounds();
+      e.preventDefault();
+    }
+
+    function onResizeUp() {
+      stopResize();
+    }
+
+    function stopResize() {
+      if (!isResizing) return;
+
+      isResizing = false;
+      card.classList.remove("ws-resizing");
+      document.removeEventListener("mousemove", onResizeMove);
+      document.removeEventListener("mouseup", onResizeUp);
+      clampPositionToBounds();
     }
 
     // Escape closes modal

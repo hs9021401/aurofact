@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "AI 網頁重點總結 (Web Summarizer)",
-  "version": "1.0.0",
-  "description": "支援 MiniMax-M3 / Anthropic API 兼容模型，在任何網頁點擊右鍵即可一鍵總結重點內容。",
+  "version": "1.1.0",
+  "description": "支援 MiniMax-M3、DeepSeek V4、GPT-5.6、Claude Sonnet 5、Ollama 與 Z.AI GLM-5.3 的 AI 網頁重點總結擴充套件。",
   "permissions": [
     "contextMenus",
     "storage",

@@ -24,6 +24,7 @@ def build_package():
         "options.html",
         "options.css",
         "options.js",
+        "i18n.js",
         "popup.html",
         "popup.css",
         "popup.js",

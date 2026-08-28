@@ -1,98 +1,279 @@
 // background.js - Service Worker for AI Web Summarizer with Multi-Profile API Support
 
-const DEFAULT_SYSTEM_PROMPT = `你是一個專業的內容分析與深入探討助手。請針對使用者提供的網頁內容或選取文字進行精準、結構清晰的繁體中文分析與解答。
+importScripts("i18n.js");
 
-初次總結時請遵循以下格式：
-### 📌 核心主旨
-用 1-2 句話概括全文最重要的核心主旨。
-
-### 💡 關鍵重點摘要
-- 條列 3 至 6 個關鍵要點。
-- 若有重要數據、關鍵結論或步驟請以**粗體**標註。
-
-### 🎯 結論與洞見
-簡短總結作者結論、實用建議或關鍵價值。
-
-在後續多輪對話中，請結合網頁原文與先前的總結，深入、親切且專業地回答使用者的延伸問題。`;
+const I18N = globalThis.WebSummarizerI18n;
+const DEFAULT_SYSTEM_PROMPT = I18N.getPrompt(I18N.defaultLocale);
 
 const DEFAULT_PROFILES = [
   {
     id: "profile_minimax",
     name: "🟣 MiniMax-M3",
+    profileNameMode: "default",
+    profileNameTemplate: "minimax",
     apiFormat: "anthropic",
     apiUrl: "https://api.minimaxi.com/anthropic/v1/messages",
     apiKey: "",
     model: "MiniMax-M3",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    systemPromptMode: "default",
+    systemPromptLocale: I18N.defaultLocale,
     maxTokens: 2048,
     temperature: 0.5
   },
   {
     id: "profile_deepseek",
-    name: "🔵 DeepSeek-V3",
+    name: "🔵 DeepSeek V4 Flash",
+    profileNameMode: "default",
+    profileNameTemplate: "deepseek",
     apiFormat: "openai",
     apiUrl: "https://api.deepseek.com/chat/completions",
     apiKey: "",
-    model: "deepseek-chat",
+    model: "deepseek-v4-flash",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    systemPromptMode: "default",
+    systemPromptLocale: I18N.defaultLocale,
     maxTokens: 2048,
     temperature: 0.5
   },
   {
     id: "profile_openai",
-    name: "🟢 GPT-4o-mini",
+    name: "🟢 GPT-5.6 Luna",
+    profileNameMode: "default",
+    profileNameTemplate: "openai",
     apiFormat: "openai",
     apiUrl: "https://api.openai.com/v1/chat/completions",
     apiKey: "",
-    model: "gpt-4o-mini",
+    model: "gpt-5.6-luna",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    systemPromptMode: "default",
+    systemPromptLocale: I18N.defaultLocale,
     maxTokens: 2048,
     temperature: 0.5
   },
   {
     id: "profile_claude",
-    name: "🟠 Claude 3.5 Sonnet",
+    name: "🟠 Claude Sonnet 5",
+    profileNameMode: "default",
+    profileNameTemplate: "claude",
     apiFormat: "anthropic",
     apiUrl: "https://api.anthropic.com/v1/messages",
     apiKey: "",
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-sonnet-5",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    systemPromptMode: "default",
+    systemPromptLocale: I18N.defaultLocale,
     maxTokens: 2048,
     temperature: 0.5
   },
   {
     id: "profile_ollama",
-    name: "⚪ Ollama (本地免 Key)",
+    name: "⚪ Ollama · Gemma 4 12B",
+    profileNameMode: "default",
+    profileNameTemplate: "ollama",
     apiFormat: "openai",
     apiUrl: "http://localhost:11434/v1/chat/completions",
     apiKey: "",
-    model: "llama3.2",
+    model: "gemma4:12b",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    systemPromptMode: "default",
+    systemPromptLocale: I18N.defaultLocale,
+    maxTokens: 2048,
+    temperature: 0.5
+  },
+  {
+    id: "profile_zai_glm53",
+    name: "🟡 Z.AI GLM-5.3",
+    profileNameMode: "default",
+    profileNameTemplate: "zai",
+    apiFormat: "openai",
+    apiUrl: "https://api.z.ai/api/paas/v4/chat/completions",
+    apiKey: "",
+    model: "glm-5.3",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    systemPromptMode: "default",
+    systemPromptLocale: I18N.defaultLocale,
     maxTokens: 2048,
     temperature: 0.5
   }
 ];
 
-// Initialize on extension install
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: "summarize_page",
-      title: "📝 總結此網頁重點",
-      contexts: ["page", "frame"]
-    });
+const CURRENT_PROVIDER_DEFAULTS_VERSION = 2;
 
-    chrome.contextMenus.create({
-      id: "summarize_selection",
-      title: "📝 總結所選文字",
-      contexts: ["selection"]
-    });
+const TEMPLATE_NAME_KEYS = Object.freeze({
+  minimax: "templateMinimaxName",
+  deepseek: "templateDeepseekName",
+  openai: "templateOpenaiName",
+  claude: "templateClaudeName",
+  ollama: "templateOllamaName",
+  zai: "templateZaiName",
+  custom: "templateCustomName"
+});
+
+const LEGACY_PROFILE_NAME_TEMPLATES = Object.freeze({
+  "🟣 MiniMax-M3": "minimax",
+  "🔵 DeepSeek-V3": "deepseek",
+  "🔵 DeepSeek V4 Flash": "deepseek",
+  "🟢 GPT-4o-mini": "openai",
+  "🟢 GPT-5.6 Luna": "openai",
+  "🟠 Claude 3.5 Sonnet": "claude",
+  "🟠 Claude Sonnet 5": "claude",
+  "⚪ Ollama (本地免 Key)": "ollama",
+  "⚪ Ollama（本地免 Key）": "ollama",
+  "⚪ Ollama · Gemma 4 12B": "ollama",
+  "🟡 Z.AI GLM-5.3": "zai",
+  "🟡 GLM-5.3": "zai",
+  "⚙️ 自訂模型配置": "custom",
+  "⚙️ 自訂空白配置": "custom"
+});
+
+const LEGACY_PROVIDER_MODELS = Object.freeze({
+  profile_deepseek: Object.freeze({
+    previous: Object.freeze(["deepseek-chat", "deepseek-reasoner", "deepseek-v3", "deepseek-r1"]),
+    current: "deepseek-v4-flash"
+  }),
+  profile_openai: Object.freeze({
+    previous: Object.freeze(["gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"]),
+    current: "gpt-5.6-luna"
+  }),
+  profile_claude: Object.freeze({
+    previous: Object.freeze([
+      "claude-3-5-sonnet-20241022",
+      "claude-3-5-sonnet-latest",
+      "claude-3-7-sonnet-latest"
+    ]),
+    current: "claude-sonnet-5"
+  }),
+  profile_ollama: Object.freeze({
+    previous: Object.freeze(["llama3.2", "llama3.2:latest"]),
+    current: "gemma4:12b"
+  })
+});
+
+const LEGACY_PROVIDER_MODELS_BY_TEMPLATE = Object.freeze({
+  deepseek: LEGACY_PROVIDER_MODELS.profile_deepseek,
+  openai: LEGACY_PROVIDER_MODELS.profile_openai,
+  claude: LEGACY_PROVIDER_MODELS.profile_claude,
+  ollama: LEGACY_PROVIDER_MODELS.profile_ollama
+});
+
+function migrateProviderDefaults(rawProfiles, storedVersion) {
+  const version = Number(storedVersion) || 0;
+  if (version >= CURRENT_PROVIDER_DEFAULTS_VERSION) {
+    return { profiles: rawProfiles, changed: false, version };
+  }
+
+  let changed = false;
+  const migratedProfiles = rawProfiles.map((profile) => {
+    const nextProfile = { ...profile };
+    const templateKey = nextProfile.profileNameTemplate || LEGACY_PROFILE_NAME_TEMPLATES[nextProfile.name];
+    const migration = LEGACY_PROVIDER_MODELS[nextProfile.id] || LEGACY_PROVIDER_MODELS_BY_TEMPLATE[templateKey];
+    if (migration && migration.previous.includes(nextProfile.model)) {
+      nextProfile.model = migration.current;
+      changed = true;
+    }
+    return nextProfile;
   });
 
+  const hasZaiProfile = migratedProfiles.some((profile) =>
+    profile.id === "profile_zai_glm53" ||
+    profile.profileNameTemplate === "zai" ||
+    profile.model === "glm-5.3" ||
+    (typeof profile.apiUrl === "string" && profile.apiUrl.includes("api.z.ai"))
+  );
+
+  if (!hasZaiProfile) {
+    migratedProfiles.push(JSON.parse(JSON.stringify(DEFAULT_PROFILES.find((profile) => profile.id === "profile_zai_glm53"))));
+    changed = true;
+  }
+
+  return {
+    profiles: migratedProfiles,
+    changed,
+    version: CURRENT_PROVIDER_DEFAULTS_VERSION
+  };
+}
+
+function migrateProfilesToLocale(rawProfiles, locale) {
+  let changed = false;
+  const defaultPrompt = I18N.getPrompt(locale);
+  const migratedProfiles = rawProfiles.map((profile) => {
+    const nextProfile = { ...profile };
+    const profileNameTemplate = nextProfile.profileNameTemplate ||
+      (nextProfile.profileNameMode !== "custom" ? LEGACY_PROFILE_NAME_TEMPLATES[nextProfile.name] : "");
+    const profileNameMode = nextProfile.profileNameMode || (profileNameTemplate ? "default" : "custom");
+
+    if (profileNameMode === "default" && TEMPLATE_NAME_KEYS[profileNameTemplate]) {
+      const localizedName = I18N.translate(locale, TEMPLATE_NAME_KEYS[profileNameTemplate]);
+      if (nextProfile.name !== localizedName || nextProfile.profileNameMode !== "default" || nextProfile.profileNameTemplate !== profileNameTemplate) {
+        changed = true;
+      }
+      nextProfile.name = localizedName;
+      nextProfile.profileNameMode = "default";
+      nextProfile.profileNameTemplate = profileNameTemplate;
+    } else {
+      if (nextProfile.profileNameMode !== "custom" || nextProfile.profileNameTemplate) {
+        changed = true;
+      }
+      nextProfile.profileNameMode = "custom";
+      delete nextProfile.profileNameTemplate;
+    }
+
+    const prompt = typeof nextProfile.systemPrompt === "string" ? nextProfile.systemPrompt.trim() : "";
+    const mode = nextProfile.systemPromptMode || (I18N.isDefaultPrompt(prompt) ? "default" : "custom");
+
+    if (mode === "default") {
+      if (nextProfile.systemPrompt !== defaultPrompt || nextProfile.systemPromptMode !== "default" || nextProfile.systemPromptLocale !== locale) {
+        changed = true;
+      }
+      nextProfile.systemPrompt = defaultPrompt;
+      nextProfile.systemPromptMode = "default";
+      nextProfile.systemPromptLocale = locale;
+    } else {
+      if (nextProfile.systemPromptMode !== "custom" || nextProfile.systemPromptLocale) {
+        changed = true;
+      }
+      nextProfile.systemPromptMode = "custom";
+      delete nextProfile.systemPromptLocale;
+    }
+
+    return nextProfile;
+  });
+
+  return { profiles: migratedProfiles, changed };
+}
+
+function updateContextMenus(locale) {
+  const normalizedLocale = I18N.normalizeLocale(locale);
+  chrome.contextMenus.update("summarize_page", {
+    title: I18N.translate(normalizedLocale, "contextSummarizePage")
+  });
+  chrome.contextMenus.update("summarize_selection", {
+    title: I18N.translate(normalizedLocale, "contextSummarizeSelection")
+  });
+}
+
+// Initialize on extension install
+chrome.runtime.onInstalled.addListener(() => {
   // Check and initialize profiles storage
-  chrome.storage.sync.get(["profiles", "activeProfileId", "apiKey", "apiUrl"], (items) => {
+  chrome.storage.sync.get(["profiles", "activeProfileId", "apiKey", "apiUrl", "uiLocale"], (items) => {
     let profiles = items.profiles;
     let activeProfileId = items.activeProfileId;
+    const uiLocale = I18N.normalizeLocale(items.uiLocale);
+
+    chrome.contextMenus.removeAll(() => {
+      chrome.contextMenus.create({
+        id: "summarize_page",
+        title: I18N.translate(uiLocale, "contextSummarizePage"),
+        contexts: ["page", "frame"]
+      });
+
+      chrome.contextMenus.create({
+        id: "summarize_selection",
+        title: I18N.translate(uiLocale, "contextSummarizeSelection"),
+        contexts: ["selection"]
+      });
+    });
 
     // Migrate from legacy single-profile config if exists
     if (!profiles || !Array.isArray(profiles) || profiles.length === 0) {
@@ -105,8 +286,16 @@ chrome.runtime.onInstalled.addListener(() => {
       }
       activeProfileId = profiles[0].id;
 
-      chrome.storage.sync.set({ profiles, activeProfileId });
+      chrome.storage.sync.set({ profiles, activeProfileId, uiLocale });
+    } else if (!items.uiLocale || items.uiLocale !== uiLocale) {
+      chrome.storage.sync.set({ uiLocale });
     }
+  });
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  chrome.storage.sync.get(["uiLocale"], (items) => {
+    updateContextMenus(I18N.normalizeLocale(items.uiLocale));
   });
 });
 
@@ -143,9 +332,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // Helper: Get active profile and all profiles
 async function getProfileConfig() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(["profiles", "activeProfileId", "apiKey", "apiUrl", "model", "apiFormat"], (items) => {
+    chrome.storage.sync.get(["profiles", "activeProfileId", "apiKey", "apiUrl", "model", "apiFormat", "uiLocale", "providerDefaultsVersion"], (items) => {
       let profiles = items.profiles;
       let activeProfileId = items.activeProfileId;
+      const uiLocale = I18N.normalizeLocale(items.uiLocale);
 
       if (!profiles || !Array.isArray(profiles) || profiles.length === 0) {
         profiles = JSON.parse(JSON.stringify(DEFAULT_PROFILES));
@@ -156,8 +346,35 @@ async function getProfileConfig() {
         activeProfileId = profiles[0].id;
       }
 
-      let activeProfile = profiles.find((p) => p.id === activeProfileId) || profiles[0];
-      resolve({ profiles, activeProfileId: activeProfile.id, activeProfile });
+      const providerMigration = migrateProviderDefaults(profiles, items.providerDefaultsVersion);
+      profiles = providerMigration.profiles;
+      const localeMigration = migrateProfilesToLocale(profiles, uiLocale);
+      profiles = localeMigration.profiles;
+      const activeProfile = profiles.find((p) => p.id === activeProfileId) || profiles[0];
+      const valuesToPersist = {};
+
+      if (providerMigration.changed || localeMigration.changed || !items.profiles || !Array.isArray(items.profiles) || items.profiles.length === 0) {
+        valuesToPersist.profiles = profiles;
+      }
+      if (providerMigration.version !== Number(items.providerDefaultsVersion) || !Number.isFinite(Number(items.providerDefaultsVersion))) {
+        valuesToPersist.providerDefaultsVersion = providerMigration.version;
+      }
+      if (!items.uiLocale || items.uiLocale !== uiLocale) {
+        valuesToPersist.uiLocale = uiLocale;
+      }
+
+      const finish = () => resolve({
+        profiles,
+        activeProfileId: activeProfile.id,
+        activeProfile,
+        uiLocale
+      });
+
+      if (Object.keys(valuesToPersist).length > 0) {
+        chrome.storage.sync.set(valuesToPersist, finish);
+      } else {
+        finish();
+      }
     });
   });
 }
@@ -202,7 +419,7 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
   }
 
   const format = profile.apiFormat || (profile.apiUrl.includes("/chat/completions") ? "openai" : "anthropic");
-  const modelName = profile.model || (format === "anthropic" ? "MiniMax-M3" : "gpt-4o-mini");
+  const modelName = profile.model || (format === "anthropic" ? "MiniMax-M3" : "gpt-5.6-luna");
   const maxTokens = parseInt(profile.maxTokens, 10) || 2048;
   const temperature = parseFloat(profile.temperature) || 0.5;
   const sysPrompt = profile.systemPrompt || DEFAULT_SYSTEM_PROMPT;
@@ -242,11 +459,14 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
     requestBody = {
       model: modelName,
       max_tokens: maxTokens,
-      temperature: temperature,
       stream: true,
       system: sysPrompt,
       messages: cleanMessages
     };
+    // Claude Sonnet 5 rejects non-default sampling parameters such as temperature.
+    if (!String(modelName).startsWith("claude-sonnet-5")) {
+      requestBody.temperature = temperature;
+    }
   } else {
     if (apiKeyTrimmed) {
       headers["Authorization"] = `Bearer ${apiKeyTrimmed}`;
@@ -366,7 +586,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "SAVE_ALL_PROFILES") {
     chrome.storage.sync.set({
       profiles: request.profiles,
-      activeProfileId: request.activeProfileId
+      activeProfileId: request.activeProfileId,
+      uiLocale: I18N.normalizeLocale(request.uiLocale)
     }, () => {
       sendResponse({ success: true });
     });
@@ -380,27 +601,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "TEST_PROFILE_CONNECTION") {
-    testProfileConnection(request.profile).then((result) => {
+    testProfileConnection(request.profile, request.locale).then((result) => {
       sendResponse(result);
+    });
+    return true;
+  }
+
+  if (request.action === "SET_UI_LOCALE") {
+    const uiLocale = I18N.normalizeLocale(request.locale);
+    chrome.storage.sync.set({ uiLocale }, () => {
+      updateContextMenus(uiLocale);
+      sendResponse({ success: true, uiLocale });
     });
     return true;
   }
 });
 
 // Test connection for a given profile
-async function testProfileConnection(profile) {
+async function testProfileConnection(profile, requestedLocale) {
+  const locale = I18N.normalizeLocale(requestedLocale);
   const startTime = Date.now();
   const isOllamaLocal = profile.apiUrl && profile.apiUrl.includes("localhost");
 
   if ((!profile.apiKey || profile.apiKey.trim() === "") && !isOllamaLocal) {
     return {
       success: false,
-      error: "請先輸入 API Key"
+      error: I18N.translate(locale, "backgroundMissingKey")
     };
   }
 
   const format = profile.apiFormat || (profile.apiUrl.includes("/chat/completions") ? "openai" : "anthropic");
-  const modelName = profile.model || (format === "anthropic" ? "MiniMax-M3" : "gpt-4o-mini");
+  const modelName = profile.model || (format === "anthropic" ? "MiniMax-M3" : "gpt-5.6-luna");
   const apiUrl = profile.apiUrl && profile.apiUrl.trim() !== ""
     ? profile.apiUrl.trim()
     : "https://api.minimaxi.com/anthropic/v1/messages";
@@ -449,7 +680,10 @@ async function testProfileConnection(profile) {
       return {
         success: false,
         status: response.status,
-        error: `連線失敗 (HTTP ${response.status}): ${detail}`
+        error: I18N.translate(locale, "backgroundHttpError", {
+          status: response.status,
+          detail
+        })
       };
     }
 
@@ -473,7 +707,9 @@ async function testProfileConnection(profile) {
   } catch (err) {
     return {
       success: false,
-      error: `連線異常: ${err.message || err}`
+      error: I18N.translate(locale, "backgroundConnectionError", {
+        message: err.message || err
+      })
     };
   }
 }
