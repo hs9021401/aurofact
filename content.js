@@ -29,6 +29,7 @@
   const RESIZE_MIN_WIDTH = 360;
   const RESIZE_MIN_HEIGHT = 360;
   const VIEWPORT_MARGIN = 12;
+  const AUTO_SCROLL_THRESHOLD = 32;
 
   // Listen for trigger messages from background
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -762,6 +763,7 @@
         margin: 8px 0;
         font-size: 12px;
         line-height: 1.45;
+        white-space: pre;
       }
 
       .ws-markdown-content pre code { background: transparent; color: inherit; padding: 0; }
@@ -1533,7 +1535,7 @@
     row.className = "ws-msg-row";
     row.innerHTML = `<div class="ws-msg-user">${escapeHtml(text)}</div>`;
     chatFeed.appendChild(row);
-    scrollToBottom();
+    scrollToBottom(true);
   }
 
   // Append assistant message bubble container into feed
@@ -1577,29 +1579,46 @@
       });
     });
 
-    scrollToBottom();
+    scrollToBottom(true);
     return contentDiv;
   }
 
   // Render assistant streaming markdown
   function renderStreamingBubble(contentEl, text) {
     if (!contentEl) return;
+    const shouldFollow = shouldAutoScroll();
     contentEl.innerHTML = parseMarkdown(text) + '<span class="ws-cursor-pulse"></span>';
-    scrollToBottom();
+    scrollToBottom(shouldFollow);
   }
 
   // Finalize assistant streaming
   function finalizeAssistantStreaming(contentEl) {
+    const shouldFollow = shouldAutoScroll();
     if (contentEl && currentStreamingText) {
       contentEl.innerHTML = parseMarkdown(currentStreamingText);
       conversationHistory.push({ role: "assistant", content: currentStreamingText });
     }
-    scrollToBottom();
+    scrollToBottom(shouldFollow);
   }
 
-  function scrollToBottom() {
+  function shouldAutoScroll() {
     const body = shadowRoot.getElementById("ws-body-content");
-    if (body) {
+    return body ? isNearBottom(body) : false;
+  }
+
+  function isNearBottom(body) {
+    return body.scrollHeight - body.scrollTop - body.clientHeight <= AUTO_SCROLL_THRESHOLD;
+  }
+
+  function scrollToBottom(shouldFollow = null) {
+    const body = shadowRoot.getElementById("ws-body-content");
+    if (!body) return;
+
+    if (shouldFollow === null) {
+      shouldFollow = isNearBottom(body);
+    }
+
+    if (shouldFollow) {
       body.scrollTop = body.scrollHeight;
     }
   }
@@ -1646,13 +1665,16 @@
     if (!md) return "";
 
     let escaped = md
+      .replace(/\r\n?/g, "\n")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
 
-    // Code blocks
-    escaped = escaped.replace(/```([\s\S]*?)```/g, (match, p1) => {
-      return `<pre><code>${p1.trim()}</code></pre>`;
+    // Protect complete code blocks while the lightweight Markdown parser handles other lines.
+    const codeBlocks = [];
+    escaped = escaped.replace(/```[^\n]*\n([\s\S]*?)```/g, (match, code) => {
+      const codeIndex = codeBlocks.push(code.replace(/^\n/, "").replace(/\n$/, "")) - 1;
+      return `\n@@WS_CODE_BLOCK_${codeIndex}@@\n`;
     });
 
     // Inline code
@@ -1681,6 +1703,12 @@
       const trimmed = lines[i].trim();
 
       if (trimmed === "") {
+        continue;
+      }
+
+      const codeBlockMatch = trimmed.match(/^@@WS_CODE_BLOCK_(\d+)@@$/);
+      if (codeBlockMatch) {
+        result.push(`<pre><code>${codeBlocks[Number(codeBlockMatch[1])]}</code></pre>`);
         continue;
       }
 

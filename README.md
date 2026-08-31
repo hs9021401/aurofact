@@ -146,7 +146,7 @@ To rebuild the standalone `.zip` distribution package:
 ```powershell
 python build_package.py
 ```
-Output will be generated in `dist/ai-web-summarizer-v1.2.0.zip`.
+Output will be generated in `dist/ai-web-summarizer-v1.2.2.zip`.
 
 ---
 
