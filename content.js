@@ -24,6 +24,7 @@
   let resizeStartX = 0, resizeStartY = 0;
   let resizeStartWidth = 0, resizeStartHeight = 0;
   let resizeObserver = null;
+  let windowStateBeforeMaximize = null;
 
   const RESIZE_MIN_WIDTH = 360;
   const RESIZE_MIN_HEIGHT = 360;
@@ -115,12 +116,12 @@
       const card = shadowRoot.getElementById("ws-main-card");
       if (card && typeof ResizeObserver !== "undefined") {
         resizeObserver = new ResizeObserver(() => {
-          clampPositionToBounds();
+          syncViewportLayout();
         });
         resizeObserver.observe(card);
       }
 
-      window.addEventListener("resize", clampPositionToBounds);
+      window.addEventListener("resize", syncViewportLayout);
     }
     loadProfilesIntoHeader();
     return shadowRoot;
@@ -172,6 +173,16 @@
     const card = shadowRoot.getElementById("ws-main-card");
     if (!card) return;
 
+    if (card.classList.contains("ws-maximized")) {
+      currentLeft = 0;
+      currentTop = 0;
+      hostElement.style.left = "0px";
+      hostElement.style.top = "0px";
+      hostElement.style.right = "auto";
+      hostElement.style.bottom = "auto";
+      return;
+    }
+
     const cardWidth = card.offsetWidth || 480;
     const cardHeight = card.offsetHeight || 620;
 
@@ -185,6 +196,33 @@
 
     hostElement.style.left = `${currentLeft}px`;
     hostElement.style.top = `${currentTop}px`;
+  }
+
+  // Keep a maximized card exactly aligned with the current viewport.
+  function syncViewportLayout() {
+    if (!hostElement || !shadowRoot) return;
+    const card = shadowRoot.getElementById("ws-main-card");
+    if (!card) return;
+
+    if (!card.classList.contains("ws-maximized")) {
+      clampPositionToBounds();
+      return;
+    }
+
+    const viewportWidth = `${Math.max(0, window.innerWidth)}px`;
+    const viewportHeight = `${Math.max(0, window.innerHeight)}px`;
+
+    if (card.style.width !== viewportWidth) card.style.width = viewportWidth;
+    if (card.style.height !== viewportHeight) card.style.height = viewportHeight;
+    if (hostElement.style.width !== viewportWidth) hostElement.style.width = viewportWidth;
+    if (hostElement.style.height !== viewportHeight) hostElement.style.height = viewportHeight;
+
+    currentLeft = 0;
+    currentTop = 0;
+    hostElement.style.left = "0px";
+    hostElement.style.top = "0px";
+    hostElement.style.right = "auto";
+    hostElement.style.bottom = "auto";
   }
 
   function getResizeConstraints() {
@@ -241,7 +279,10 @@
           <button class="ws-btn-icon" id="ws-btn-minimize" title="最小化/還原">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </button>
-          <button class="ws-btn-icon ws-btn-close" id="ws-btn-close" title="關閉 (Esc)">
+          <button class="ws-btn-icon" id="ws-btn-maximize" title="最大化視窗" aria-label="最大化視窗">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M21 16v5h-5"></path></svg>
+          </button>
+          <button class="ws-btn-icon ws-btn-close" id="ws-btn-close" title="關閉 (Esc)" aria-label="關閉 (Esc)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
@@ -380,7 +421,19 @@
 
       .ws-card.ws-minimized {
         height: 50px !important;
+        min-height: 0 !important;
+        max-height: 50px !important;
+        flex: 0 0 50px;
         overflow: hidden;
+      }
+
+      .ws-card.ws-maximized {
+        min-width: 0 !important;
+        max-width: none !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        border-radius: 0;
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.16);
       }
 
       .ws-card.ws-minimized .ws-body,
@@ -962,6 +1015,7 @@
       }
 
       .ws-card.ws-minimized .ws-resize-handle { display: none; }
+      .ws-card.ws-maximized .ws-resize-handle { display: none; }
     `;
   }
 
@@ -972,6 +1026,7 @@
     const dragHandleBottom = shadowRoot.getElementById("ws-footer-drag");
     const btnClose = shadowRoot.getElementById("ws-btn-close");
     const btnMinimize = shadowRoot.getElementById("ws-btn-minimize");
+    const btnMaximize = shadowRoot.getElementById("ws-btn-maximize");
     const btnSettings = shadowRoot.getElementById("ws-btn-settings");
     const btnCopyAll = shadowRoot.getElementById("ws-btn-copy-all");
     const btnRetry = shadowRoot.getElementById("ws-btn-retry");
@@ -988,6 +1043,8 @@
         resizeObserver.disconnect();
         resizeObserver = null;
       }
+      window.removeEventListener("resize", syncViewportLayout);
+      windowStateBeforeMaximize = null;
       if (hostElement) {
         hostElement.remove();
         hostElement = null;
@@ -997,8 +1054,23 @@
 
     // Minimize
     btnMinimize.addEventListener("click", () => {
-      card.classList.toggle("ws-minimized");
+      if (card.classList.contains("ws-maximized")) {
+        const wasMinimized = windowStateBeforeMaximize?.wasMinimized === true;
+        restoreWindowFromMaximized();
+        if (!wasMinimized) card.classList.add("ws-minimized");
+      } else {
+        card.classList.toggle("ws-minimized");
+      }
       clampPositionToBounds();
+    });
+
+    // Maximize / restore to the full viewport
+    btnMaximize.addEventListener("click", () => {
+      if (card.classList.contains("ws-maximized")) {
+        restoreWindowFromMaximized();
+      } else {
+        maximizeWindow();
+      }
     });
 
     // Settings
@@ -1016,17 +1088,17 @@
 
     // Reset position to bottom right
     btnResetPos.addEventListener("click", () => {
-      setInitialPosition();
+      resetWindowPosition();
     });
 
     // Double click handles to reset position
     dragHandleTop.addEventListener("dblclick", (e) => {
       if (e.target.closest("button") || e.target.closest("select")) return;
-      setInitialPosition();
+      resetWindowPosition();
     });
     dragHandleBottom.addEventListener("dblclick", (e) => {
       if (e.target.closest("button")) return;
-      setInitialPosition();
+      resetWindowPosition();
     });
 
     // Copy All Conversation
@@ -1098,10 +1170,81 @@
     bindDragHandle(dragHandleTop);
     bindDragHandle(dragHandleBottom);
     bindResizeHandle(shadowRoot.getElementById("ws-resize-handle"));
+    updateMaximizeButton();
+
+    function updateMaximizeButton() {
+      const isMaximized = card.classList.contains("ws-maximized");
+      const label = isMaximized ? "還原視窗大小" : "最大化視窗";
+
+      btnMaximize.title = label;
+      btnMaximize.setAttribute("aria-label", label);
+      btnMaximize.innerHTML = isMaximized
+        ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="10" height="10" rx="1"></rect><path d="M5 17H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"></path></svg>'
+        : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M21 16v5h-5"></path></svg>';
+    }
+
+    function maximizeWindow() {
+      if (card.classList.contains("ws-maximized")) return;
+
+      windowStateBeforeMaximize = {
+        width: card.style.width,
+        height: card.style.height,
+        left: currentLeft,
+        top: currentTop,
+        wasMinimized: card.classList.contains("ws-minimized")
+      };
+
+      card.classList.remove("ws-minimized");
+      card.classList.add("ws-maximized");
+      syncViewportLayout();
+      updateMaximizeButton();
+    }
+
+    function restoreWindowFromMaximized() {
+      if (!card.classList.contains("ws-maximized")) return;
+
+      const savedState = windowStateBeforeMaximize;
+      card.classList.remove("ws-maximized");
+
+      if (savedState) {
+        if (savedState.width) {
+          card.style.width = savedState.width;
+        } else {
+          card.style.removeProperty("width");
+        }
+        if (savedState.height) {
+          card.style.height = savedState.height;
+        } else {
+          card.style.removeProperty("height");
+        }
+        currentLeft = savedState.left;
+        currentTop = savedState.top;
+        if (savedState.wasMinimized) {
+          card.classList.add("ws-minimized");
+        }
+      } else {
+        setInitialPosition();
+      }
+
+      hostElement.style.removeProperty("width");
+      hostElement.style.removeProperty("height");
+      windowStateBeforeMaximize = null;
+      clampPositionToBounds();
+      updateMaximizeButton();
+    }
+
+    function resetWindowPosition() {
+      if (card.classList.contains("ws-maximized")) {
+        restoreWindowFromMaximized();
+      }
+      setInitialPosition();
+      clampPositionToBounds();
+    }
 
     function bindDragHandle(el) {
       el.addEventListener("mousedown", (e) => {
         if (e.target.closest("button") || e.target.closest("a") || e.target.closest("textarea") || e.target.closest("select")) return;
+        if (card.classList.contains("ws-maximized")) return;
         
         isDragging = true;
         startX = e.clientX;
@@ -1123,6 +1266,7 @@
       const deltaY = e.clientY - startY;
 
       const card = shadowRoot.getElementById("ws-main-card");
+      if (card?.classList.contains("ws-maximized")) return;
       const cardWidth = card ? card.offsetWidth || 480 : 480;
       const cardHeight = card ? card.offsetHeight || 620 : 620;
 

@@ -41,6 +41,7 @@
   - 採用 Shadow DOM，完全與宿主網頁 CSS 隔離，不破壞排版、不受網頁樣式污染。
   - 頂部與底部雙拖曳把手，強制邊界限制 `minTop = 10px`，讓整個視窗保持在 viewport 內。
   - 右下角提供可視化調整把手，可自由調整視窗寬高；視窗會依目前 viewport 限制最小／最大尺寸。
+  - 標題列提供最小化與最大化／還原按鈕；最大化可鋪滿目前 viewport，最小化只保留標題列。
   - 支援按兩下快速重設回右下角位置，並監聽瀏覽器視窗縮放自動校正。
 - ⚙️ **現代化多配置管理後台 (Options Page)**：
   - 左側配置清單與範本一鍵新增。
@@ -104,6 +105,7 @@
   - 100% CSS isolation via Shadow DOM — immune to host page stylesheets and reset rules.
   - Dual drag handles (Top Header + Bottom Status Bar) with strict boundary clamping (`minTop = 10px`) to keep the full window in the viewport.
   - A visible bottom-right resize handle lets you adjust width and height; viewport-aware minimum and maximum sizes prevent clipping.
+  - Header controls support minimize and maximize/restore; maximize fills the current viewport while minimize keeps only the title bar.
   - Double-click to auto-reset position to the bottom-right corner.
 - ⚙️ **Modern Options Dashboard**:
   - Manage multiple profiles, clone configurations, and test latency (ms) per profile in real-time.
@@ -144,7 +146,7 @@ To rebuild the standalone `.zip` distribution package:
 ```powershell
 python build_package.py
 ```
-Output will be generated in `dist/ai-web-summarizer-v1.1.0.zip`.
+Output will be generated in `dist/ai-web-summarizer-v1.2.0.zip`.
 
 ---
 
