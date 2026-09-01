@@ -59,6 +59,24 @@
 
 ---
 
+### 🖼️ 使用畫面與設定說明
+
+#### 浮動摘要視窗
+
+在網頁上執行總結後，摘要結果會顯示在右下角的浮動視窗中。視窗支援拖曳、自由調整大小、最小化，以及最大化至目前 viewport；回答串流輸出時，若使用者正在閱讀前面的內容，不會強制將畫面捲回最底部。
+
+![浮動摘要視窗](docs/screenshots/summary-panel.png)
+
+#### 多組 LLM Provider 設定
+
+開啟外掛設定頁後，可以在左側管理多組配置，分別設定 Provider、API Endpoint、API Key、模型、協議與 System Prompt。設定頁支援繁體中文、English、日本語與한국어；內建 System Prompt 會隨介面語言切換，自訂 Prompt 則會保留原文。
+
+![LLM Provider 設定頁](docs/screenshots/settings-page.png)
+
+> `summary-panel.png` 顯示實際摘要與浮動視窗控制項；`settings-page.png` 顯示 Provider、模型選擇與 System Prompt。請勿在截圖中展示真實 API Key。
+
+---
+
 ### ⚙️ 管理與切換多組 API
 
 1. 點擊瀏覽器右上角外掛圖示 ➜ 點選 **「多組 API 設定管理」**。
@@ -119,6 +137,24 @@
 2. Toggle on **"Developer mode"** in the top-right corner.
 3. Click **"Load unpacked"** in the top-left corner and select this project directory.
    *(Or unzip the release `.zip` and select the unzipped folder)*.
+
+---
+
+### 🖼️ Screenshots & Configuration Guide
+
+#### Floating Summary Panel
+
+After starting a summary, the result appears in a floating panel at the bottom-right of the webpage. The panel can be dragged, resized, minimized, or maximized to the current viewport. During streaming responses, it preserves the reader's position instead of forcibly scrolling to the bottom.
+
+![Floating summary panel](docs/screenshots/summary-panel.png)
+
+#### LLM Provider Configuration
+
+The options page lets you manage multiple profiles with separate providers, API endpoints, API keys, models, protocols, and system prompts. The interface supports Traditional Chinese, English, Japanese, and Korean. Built-in system prompts follow the selected interface language, while custom prompts are preserved.
+
+![LLM Provider settings page](docs/screenshots/settings-page.png)
+
+> `summary-panel.png` shows the summary result and floating-panel controls; `settings-page.png` shows the provider, model, and system-prompt settings. Never include real API keys in screenshots.
 
 ---
 
