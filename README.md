@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  專為 Brave 與 Chrome 打造的 AI 網頁重點總結與多輪對話擴充套件 (Manifest V3)。<br>
+  支援 Brave、Google Chrome 與 Microsoft Edge 的 AI 網頁重點總結與多輪對話擴充套件 (Manifest V3)。<br>
   支援 <strong>MiniMax-M3、DeepSeek V4、GPT-5.6、Claude Sonnet 5、Ollama、Z.AI GLM-5.3</strong> 等雙協議多模型自由切換。
 </p>
 
@@ -50,9 +50,9 @@
 
 ---
 
-### 🛠️ 安裝教學（Brave / Chrome）
+### 🛠️ 安裝教學（Brave / Chrome / Edge）
 
-1. 在 **Brave** 網址列輸入並前往：`brave://extensions` *(Chrome 請輸入 `chrome://extensions`)*
+1. 開啟瀏覽器的擴充功能管理頁：**Brave**：`brave://extensions`、**Chrome**：`chrome://extensions`、**Edge**：`edge://extensions`。
 2. 開啟右上角 **「開發人員模式 (Developer mode)」**。
 3. 點擊 **「載入未封裝項目 (Load unpacked)」**，選取本外掛專案資料夾。
    *(或解壓縮發布的 `.zip` 檔案後選取該資料夾)*
@@ -72,8 +72,6 @@
 開啟外掛設定頁後，可以在左側管理多組配置，分別設定 Provider、API Endpoint、API Key、模型、協議與 System Prompt。設定頁支援繁體中文、English、日本語與한국어；內建 System Prompt 會隨介面語言切換，自訂 Prompt 則會保留原文。
 
 ![LLM Provider 設定頁](docs/screenshots/settings-page.png)
-
-> `summary-panel.png` 顯示實際摘要與浮動視窗控制項；`settings-page.png` 顯示 Provider、模型選擇與 System Prompt。請勿在截圖中展示真實 API Key。
 
 ---
 
@@ -131,9 +129,9 @@
 
 ---
 
-### 🛠️ Installation (Brave / Chrome)
+### 🛠️ Installation (Brave / Chrome / Edge)
 
-1. Open **Brave** and navigate to `brave://extensions` *(or `chrome://extensions` in Chrome)*.
+1. Open the extensions management page: **Brave**: `brave://extensions`, **Chrome**: `chrome://extensions`, or **Edge**: `edge://extensions`.
 2. Toggle on **"Developer mode"** in the top-right corner.
 3. Click **"Load unpacked"** in the top-left corner and select this project directory.
    *(Or unzip the release `.zip` and select the unzipped folder)*.
@@ -153,8 +151,6 @@ After starting a summary, the result appears in a floating panel at the bottom-r
 The options page lets you manage multiple profiles with separate providers, API endpoints, API keys, models, protocols, and system prompts. The interface supports Traditional Chinese, English, Japanese, and Korean. Built-in system prompts follow the selected interface language, while custom prompts are preserved.
 
 ![LLM Provider settings page](docs/screenshots/settings-page.png)
-
-> `summary-panel.png` shows the summary result and floating-panel controls; `settings-page.png` shows the provider, model, and system-prompt settings. Never include real API keys in screenshots.
 
 ---
 
