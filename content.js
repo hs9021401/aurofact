@@ -1036,7 +1036,38 @@
     const chatInput = shadowRoot.getElementById("ws-chat-input");
     const btnSend = shadowRoot.getElementById("ws-btn-send");
     const profileSelector = shadowRoot.getElementById("ws-profile-selector");
+    const isolatedKeyboardEvents = ["keydown", "keypress", "keyup"];
 
+    // Keep keyboard events from leaking through the Shadow DOM to host-page shortcuts.
+    // We handle Enter/Escape here because stopping propagation during window capture
+    // prevents the event from reaching the input/document listeners below it.
+    function stopHostKeyboardShortcuts(e) {
+      const eventPath = typeof e.composedPath === "function" ? e.composedPath() : [];
+      // Compare DOM identifiers instead of object identity because content scripts
+      // and the host page can expose different wrappers for the same DOM node.
+      const isChatInputEvent = eventPath.some((node) => node?.id === chatInput.id);
+      if (!isChatInputEvent && e.target?.id !== chatInput.id) return;
+
+      e.stopPropagation();
+
+      if (e.type !== "keydown") return;
+
+      if (e.key === "Escape" && hostElement) {
+        btnClose.click();
+        return;
+      }
+
+      if (e.isComposing || e.keyCode === 229) return;
+
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendUserFollowUp();
+      }
+    }
+
+    isolatedKeyboardEvents.forEach((eventName) => {
+      window.addEventListener(eventName, stopHostKeyboardShortcuts, true);
+    });
     // Close
     btnClose.addEventListener("click", () => {
       stopCurrentGeneration();
@@ -1046,6 +1077,9 @@
         resizeObserver = null;
       }
       window.removeEventListener("resize", syncViewportLayout);
+      isolatedKeyboardEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, stopHostKeyboardShortcuts, true);
+      });
       windowStateBeforeMaximize = null;
       if (hostElement) {
         hostElement.remove();
@@ -1139,16 +1173,6 @@
         return;
       }
       sendUserFollowUp();
-    });
-
-    // Enter key press in textarea (with IME guard for Chinese typing)
-    chatInput.addEventListener("keydown", (e) => {
-      if (e.isComposing || e.keyCode === 229) return;
-
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendUserFollowUp();
-      }
     });
 
     // Auto-resize textarea
