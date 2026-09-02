@@ -12,7 +12,7 @@ def build_package():
         manifest = json.load(f)
     
     version = manifest.get("version", "1.0.0")
-    pkg_name = f"ai-web-summarizer-v{version}.zip"
+    pkg_name = f"aurofact-v{version}.zip"
     
     os.makedirs("dist", exist_ok=True)
     output_path = os.path.join("dist", pkg_name)

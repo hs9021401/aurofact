@@ -1,4 +1,4 @@
-// background.js - Service Worker for AI Web Summarizer with Multi-Profile API Support
+// background.js - AUROFACT service worker with multi-profile API support
 
 importScripts("i18n.js");
 

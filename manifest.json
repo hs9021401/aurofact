@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "AI 網頁重點總結 (Web Summarizer)",
-  "version": "1.4.0",
-  "description": "支援 MiniMax-M3、DeepSeek V4、GPT-5.6、Claude Sonnet 5、Ollama 與 Z.AI GLM-5.3 的 AI 網頁重點總結擴充套件。",
+  "name": "AUROFACT｜AI Web Summarizer & Insight Assistant",
+  "version": "1.4.1",
+  "description": "AUROFACT is an AI browser assistant for summarizing webpages, analyzing selected text, and turning content into actionable insights with multiple LLM providers.",
   "permissions": [
     "contextMenus",
     "storage",
@@ -18,7 +18,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "AI 網頁重點總結",
+    "default_title": "AUROFACT｜AI Web Summarizer & Insight Assistant",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -31,7 +31,7 @@
       "suggested_key": {
         "default": "Alt+Shift+S"
       },
-      "description": "Summarize the current webpage"
+      "description": "Summarize the current webpage with AUROFACT"
     }
   },
   "options_ui": {

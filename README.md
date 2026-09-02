@@ -1,7 +1,7 @@
-# AI 網頁重點總結 (Web Summarizer & Chat)
+# AUROFACT｜AI Web Summarizer & Insight Assistant
 
 <p align="center">
-  <img src="icons/icon128.png" width="96" height="96" alt="AI Web Summarizer Logo">
+  <img src="icons/icon128.png" width="96" height="96" alt="AUROFACT Logo">
 </p>
 
 <p align="center">
@@ -9,8 +9,13 @@
 </p>
 
 <p align="center">
-  支援 Brave、Google Chrome 與 Microsoft Edge 的 AI 網頁重點總結與多輪對話擴充套件 (Manifest V3)。<br>
+  支援 Brave、Google Chrome 與 Microsoft Edge 的 AUROFACT AI 網頁摘要與多輪對話擴充套件 (Manifest V3)。<br>
   支援 <strong>MiniMax-M3、DeepSeek V4、GPT-5.6、Claude Sonnet 5、Ollama、Z.AI GLM-5.3</strong> 等雙協議多模型自由切換。
+</p>
+
+<p align="center">
+  <a href="https://github.com/hs9021401/aurofact">GitHub Repository</a> ·
+  <a href="https://github.com/hs9021401/aurofact/releases/latest">Latest Release</a>
 </p>
 
 ---
@@ -67,29 +72,39 @@
 
 在網頁上執行總結後，摘要結果會顯示在右下角的浮動視窗中。視窗支援拖曳、自由調整大小、最小化，以及最大化至目前 viewport；回答串流輸出時，若使用者正在閱讀前面的內容，不會強制將畫面捲回最底部。
 
-![浮動摘要視窗](docs/screenshots/floating-summary-en.png)
+![AUROFACT 浮動摘要視窗](docs/screenshots/floating-summary-aurofact.png)
+
+最大化後可展開至整個 viewport，並保留完整的垂直捲動範圍：
+
+![AUROFACT 最大化浮動摘要視窗](docs/screenshots/floating-maximized-aurofact.png)
+
+#### 工具列 Popup
+
+點擊瀏覽器工具列上的 AUROFACT 圖示，可在 Popup 中查看目前配置、切換模型、立即總結網頁或開啟完整設定頁：
+
+![AUROFACT 工具列 Popup](docs/screenshots/popup-aurofact.png)
 
 #### 選取文字操作
 
 反白選取網頁文字後開啟右鍵選單，可選擇「AI 處理選取文字」開始進行後續操作：
 
-![選取文字後的右鍵選單](docs/screenshots/selection-actions-1.png)
+![選取文字後的右鍵選單](docs/screenshots/selection-actions-before-aurofact.png)
 
 執行後會在浮窗中顯示選取內容，並提供總結、翻譯、解釋、改寫、修正文法與自訂指令等操作：
 
-![選取文字操作浮窗](docs/screenshots/selection-actions-2.png)
+![選取文字操作浮窗](docs/screenshots/selection-actions-after-aurofact.png)
 
 #### 多語言介面
 
 設定頁右上角的語言下拉選單使用各語言的原生名稱，切換後設定頁、浮窗文字與預設 System Prompt 會同步使用該語言：
 
-![語言切換選單](docs/screenshots/language-selector.png)
+![語言切換選單](docs/screenshots/language-selector-aurofact.png)
 
 #### 多組 LLM Provider 設定
 
 開啟外掛設定頁後，可以在左側管理多組配置，分別設定 Provider、API Endpoint、API Key、模型、協議與 System Prompt。設定頁與浮窗支援繁體中文、簡體中文、English、日本語、한국어、Français、Español、Deutsch、Tiếng Việt、ไทย與 Bahasa Indonesia；內建 System Prompt 會隨介面語言切換，自訂 Prompt 則會保留原文。
 
-![LLM Provider 設定頁](docs/screenshots/settings-profiles.png)
+![LLM Provider 設定頁](docs/screenshots/settings-profiles-aurofact.png)
 
 ---
 
@@ -116,6 +131,8 @@
 ## English
 
 <a id="english"></a>
+
+**AUROFACT** is an AI Web Summarizer & Insight Assistant for Brave, Google Chrome, and Microsoft Edge. It turns webpages and selected text into clear summaries, follow-up conversations, and actionable insights while supporting multiple LLM API profiles.
 
 ### ✨ Key Features
 
@@ -166,29 +183,39 @@
 
 After starting a summary, the result appears in a floating panel at the bottom-right of the webpage. The panel can be dragged, resized, minimized, or maximized to the current viewport. During streaming responses, it preserves the reader's position instead of forcibly scrolling to the bottom.
 
-![Floating summary panel](docs/screenshots/floating-summary-en.png)
+![AUROFACT floating summary panel](docs/screenshots/floating-summary-aurofact.png)
+
+When maximized, the panel expands to the entire viewport while retaining a usable vertical scrollbar:
+
+![AUROFACT maximized floating summary panel](docs/screenshots/floating-maximized-aurofact.png)
+
+#### Toolbar Popup
+
+Click the AUROFACT toolbar icon to view the active profile, switch models, summarize the current webpage, or open the full settings page:
+
+![AUROFACT toolbar popup](docs/screenshots/popup-aurofact.png)
 
 #### Selected Text Actions
 
 Highlight text on a webpage and open the context menu to choose **"Process selected text with AI"** before selecting an operation:
 
-![Context menu for selected text actions](docs/screenshots/selection-actions-1.png)
+![Context menu for selected text actions](docs/screenshots/selection-actions-before-aurofact.png)
 
 The floating panel then displays the selected content and provides actions such as summarize, translate, explain, rewrite, grammar correction, and custom instructions:
 
-![Floating panel for selected text actions](docs/screenshots/selection-actions-2.png)
+![Floating panel for selected text actions](docs/screenshots/selection-actions-after-aurofact.png)
 
 #### Multilingual Interface
 
 The language dropdown uses each language's native name. After switching, the options page, floating panel, and default System Prompt use the selected language:
 
-![Language selector](docs/screenshots/language-selector.png)
+![Language selector](docs/screenshots/language-selector-aurofact.png)
 
 #### LLM Provider Configuration
 
 The options page lets you manage multiple profiles with separate providers, API endpoints, API keys, models, protocols, and system prompts. The interface supports Traditional Chinese, Simplified Chinese, English, Japanese, Korean, French, Spanish, German, Vietnamese, Thai, and Indonesian. Built-in system prompts follow the selected interface language, while custom prompts are preserved.
 
-![LLM Provider settings page](docs/screenshots/settings-profiles.png)
+![LLM Provider settings page](docs/screenshots/settings-profiles-aurofact.png)
 
 ---
 
@@ -218,7 +245,7 @@ To rebuild the standalone `.zip` distribution package:
 ```powershell
 python build_package.py
 ```
-Output will be generated in `dist/ai-web-summarizer-v1.4.0.zip`.
+Output will be generated in `dist/aurofact-v1.4.1.zip`.
 
 ---
 

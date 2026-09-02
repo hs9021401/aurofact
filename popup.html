@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI 網頁重點總結</title>
+  <title data-i18n="popupPageTitle">AUROFACT｜AI Web Summarizer &amp; Insight Assistant</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -11,14 +11,14 @@
     <!-- Header -->
     <header class="popup-header">
       <div class="header-brand">
-        <img src="icons/icon32.png" alt="Logo" class="logo">
-        <span class="app-title">AI 網頁重點總結</span>
+        <img src="icons/icon32.png" alt="外掛圖示" class="logo" data-i18n-alt="logoAlt">
+        <span class="app-title" data-i18n="appTitle">AUROFACT</span>
       </div>
     </header>
 
     <!-- Profile Quick Switcher -->
     <div class="profile-switch-section">
-      <label for="popup-profile-select" class="field-label">⚡ 當前使用模型 / API：</label>
+      <label for="popup-profile-select" class="field-label" data-i18n="popupProfileLabel">⚡ 當前使用模型 / API：</label>
       <select id="popup-profile-select" class="popup-select">
         <!-- Dynamically loaded profiles -->
       </select>
@@ -28,8 +28,8 @@
     <div class="status-card" id="status-card">
       <div class="status-indicator" id="status-dot"></div>
       <div class="status-info">
-        <span class="status-title" id="status-text">檢查設定中...</span>
-        <span class="status-sub" id="status-sub">讀取 API 配置</span>
+        <span class="status-title" id="status-text" data-i18n="popupStatusLoading">檢查設定中…</span>
+        <span class="status-sub" id="status-sub" data-i18n="popupStatusReading">讀取 API 配置</span>
       </div>
     </div>
 
@@ -39,7 +39,7 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
         </svg>
-        <span>立即總結當前網頁</span>
+        <span data-i18n="popupSummarizeNow">立即總結當前網頁</span>
       </button>
 
       <button type="button" class="btn btn-outline" id="btn-open-options">
@@ -47,16 +47,17 @@
           <circle cx="12" cy="12" r="3"></circle>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
-        <span>多組 API 設定管理</span>
+        <span data-i18n="popupOpenOptions">多組 API 設定管理</span>
       </button>
     </div>
 
     <!-- Tip Footer -->
     <footer class="popup-footer">
-      <p class="tip-text">💡 <strong>小提示：</strong>在任何網頁點擊<strong>右鍵</strong>，即可一鍵總結重點或選取段落。</p>
+      <p class="tip-text">💡 <strong data-i18n="popupTipLabel">小提示：</strong><span data-i18n="popupTipText">在任何網頁點擊右鍵，即可一鍵總結重點或選取段落。</span></p>
     </footer>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

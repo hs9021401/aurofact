@@ -1,4 +1,10 @@
-// popup.js - Extension Popup Logic with Multi-Profile Selector
+// popup.js - AUROFACT Extension Popup Logic with Multi-Profile Selector
+
+const I18N = globalThis.WebSummarizerI18n;
+
+if (!I18N) {
+  throw new Error("Shared i18n data was not loaded.");
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   const profileSelect = document.getElementById("popup-profile-select");
@@ -9,27 +15,48 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnOpenOptions = document.getElementById("btn-open-options");
 
   let loadedProfiles = [];
+  let currentLocale = I18N.defaultLocale;
 
-  // Load all profiles
-  chrome.runtime.sendMessage({ action: "GET_PROFILES" }, (response) => {
-    if (response && response.success) {
-      loadedProfiles = response.profiles || [];
-      const activeId = response.activeProfileId;
+  function t(key, values = {}) {
+    return I18N.translate(currentLocale, key, values);
+  }
 
-      profileSelect.innerHTML = "";
-      loadedProfiles.forEach((p) => {
-        const opt = document.createElement("option");
-        opt.value = p.id;
-        opt.textContent = `${p.name} (${p.model})`;
-        if (p.id === activeId) {
-          opt.selected = true;
-        }
-        profileSelect.appendChild(opt);
-      });
+  function applyTranslations() {
+    const locale = I18N.getLocale(currentLocale);
+    document.documentElement.lang = locale.htmlLang;
+    document.title = t("popupPageTitle");
 
-      updateStatusUI(response.activeProfile);
-    }
-  });
+    document.querySelectorAll("[data-i18n]").forEach((element) => {
+      element.textContent = t(element.getAttribute("data-i18n"));
+    });
+
+    document.querySelectorAll("[data-i18n-alt]").forEach((element) => {
+      element.alt = t(element.getAttribute("data-i18n-alt"));
+    });
+  }
+
+  function loadProfiles() {
+    // Load all profiles
+    chrome.runtime.sendMessage({ action: "GET_PROFILES" }, (response) => {
+      if (response && response.success) {
+        loadedProfiles = response.profiles || [];
+        const activeId = response.activeProfileId;
+
+        profileSelect.innerHTML = "";
+        loadedProfiles.forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = `${p.name} (${p.model})`;
+          if (p.id === activeId) {
+            opt.selected = true;
+          }
+          profileSelect.appendChild(opt);
+        });
+
+        updateStatusUI(response.activeProfile);
+      }
+    });
+  }
 
   // Switch active profile when dropdown changes
   profileSelect.addEventListener("change", () => {
@@ -47,14 +74,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (hasKey) {
       statusDot.className = "status-indicator ready";
-      statusText.textContent = "API 已就緒";
-      statusSub.textContent = `已配置 ${profile.name} (${profile.model})`;
+      statusText.textContent = t("popupStatusReady");
+      statusSub.textContent = t("popupStatusConfigured", { name: profile.name, model: profile.model });
     } else {
       statusDot.className = "status-indicator unconfigured";
-      statusText.textContent = "尚未設定 API Key";
-      statusSub.textContent = `請至設定頁填入「${profile.name}」的密鑰`;
+      statusText.textContent = t("popupStatusNoKey");
+      statusSub.textContent = t("popupStatusConfigure", { name: profile.name });
     }
   }
+
+  // Read the same locale selected on the options page before rendering any Popup content.
+  chrome.storage.sync.get(["uiLocale"], (items) => {
+    currentLocale = I18N.normalizeLocale(items?.uiLocale);
+    applyTranslations();
+    loadProfiles();
+  });
 
   // Open Options
   btnOpenOptions.addEventListener("click", () => {

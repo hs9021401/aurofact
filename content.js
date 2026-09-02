@@ -1,4 +1,4 @@
-// content.js - Injected Content Script with Multi-Turn Q&A, Dynamic Profile Switcher, and Safe Viewport Dragging
+// content.js - AUROFACT content script with multi-turn Q&A, profile switching, and safe viewport dragging
 
 (function () {
   if (window.__webSummarizerInjected) return;
@@ -47,6 +47,7 @@
     ja: { title: "AI要約", selected: "選択テキスト", selectedSummary: "選択テキストの要約", loading: "ウェブページを分析し、AIに要約を依頼しています...", connecting: "AIモデルに接続中...", input: "追加の質問を入力...（Enterで送信、Shift+Enterで改行）", selection: "上の操作を選択するか、「カスタム」で指示を入力してください...", custom: "選択テキストへの操作を入力...（Enterで送信）", selectedPrefix: "選択済み：", send: "質問を送信", stop: "生成を停止", actions: ["要約", "翻訳", "説明", "書き換え", "文法修正", "カスタム"] },
     ko: { title: "AI 요약", selected: "선택한 텍스트", selectedSummary: "선택 텍스트 요약", loading: "웹페이지를 분석하고 AI에 요약을 요청하는 중...", connecting: "AI 모델에 연결하는 중...", input: "추가 질문 입력... (Enter 전송, Shift+Enter 줄바꿈)", selection: "위 작업을 선택하거나 ‘사용자 지정’을 눌러 지시를 입력하세요...", custom: "선택한 텍스트에 수행할 작업 입력... (Enter 전송)", selectedPrefix: "선택됨: ", send: "질문 보내기", stop: "생성 중지", actions: ["요약", "번역", "설명", "다시 쓰기", "문법 수정", "사용자 지정"] }
   };
+  Object.values(FLOATING_TEXT).forEach((localeText) => { localeText.title = "AUROFACT"; });
   const ft = () => FLOATING_TEXT[currentLocale] || FLOATING_TEXT["zh-TW"];
   const FLOATING_LABELS = {
     "zh-TW": {
@@ -374,7 +375,7 @@
               <line x1="16" y1="17" x2="8" y2="17"></line>
             </svg>
           </div>
-          <span class="ws-title" id="ws-header-title">AI 總結</span>
+          <span class="ws-title" id="ws-header-title">AUROFACT</span>
           
           <!-- Header Profile Quick Switcher -->
           <div class="ws-profile-select-wrapper" title="快速切換 AI 模型/配置">

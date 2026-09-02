@@ -20,10 +20,10 @@
 
 在後續多輪對話中，請結合網頁原文與先前的總結，深入、親切且專業地回答使用者的延伸問題。`,
       strings: {
-        pageTitle: "外掛設定 - AI 網頁重點總結（多組 API 管理）",
+        pageTitle: "AUROFACT｜AI 網頁摘要與洞見助手 - 外掛設定",
         logoAlt: "外掛圖示",
-        appTitle: "AI 網頁重點總結",
-        subtitle: "管理與快速切換多組 LLM API 配置（MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI）",
+        appTitle: "AUROFACT",
+        subtitle: "AI 網頁摘要與洞見助手",
         languageLabel: "語言",
         languageOptionZhTw: "繁體中文",
         languageOptionEn: "英文",
@@ -141,10 +141,10 @@ Briefly summarize the author's conclusion, practical recommendations, or key val
 
 For subsequent multi-turn conversations, combine the original webpage content and the previous summary to answer the user's follow-up questions in a thorough, friendly, and professional manner.`,
       strings: {
-        pageTitle: "Extension Settings - AI Web Summarizer (Multi-Profile API)",
+        pageTitle: "AUROFACT｜AI Web Summarizer & Insight Assistant - Settings",
         logoAlt: "Extension icon",
-        appTitle: "AI Web Summarizer",
-        subtitle: "Manage and quickly switch between multiple LLM API profiles (MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI)",
+        appTitle: "AUROFACT",
+        subtitle: "AI Web Summarizer & Insight Assistant",
         languageLabel: "Language",
         languageOptionZhTw: "Traditional Chinese",
         languageOptionEn: "English",
@@ -648,6 +648,202 @@ Dalam percakapan berikutnya, gabungkan isi asli halaman web dan ringkasan sebelu
 
   Object.keys(versionLabels).forEach((locale) => {
     locales[locale].strings.versionLabel = versionLabels[locale];
+  });
+
+  const BRAND_NAME = "AUROFACT";
+  const BRAND_PAGE_TITLES = Object.freeze({
+    "zh-TW": "AUROFACT｜AI 網頁摘要與洞見助手 - 外掛設定",
+    en: "AUROFACT｜AI Web Summarizer & Insight Assistant - Settings",
+    ja: "AUROFACT｜AIウェブ要約・洞察アシスタント - 拡張機能設定",
+    ko: "AUROFACT｜AI 웹 요약 및 인사이트 어시스턴트 - 확장 프로그램 설정",
+    "zh-CN": "AUROFACT｜AI 网页摘要与洞察助手 - 扩展程序设置",
+    fr: "AUROFACT｜Assistant IA de résumé et d’analyse du Web - Paramètres",
+    es: "AUROFACT｜Asistente de IA para resúmenes y perspectivas web - Configuración",
+    de: "AUROFACT｜KI-Assistent für Webzusammenfassungen und Einblicke - Erweiterungseinstellungen",
+    vi: "AUROFACT｜Trợ lý AI tóm tắt và phân tích web - Cài đặt tiện ích",
+    th: "AUROFACT｜ผู้ช่วย AI สรุปและวิเคราะห์เว็บ - การตั้งค่าส่วนขยาย",
+    id: "AUROFACT｜Asisten AI untuk Ringkasan dan Wawasan Web - Pengaturan Ekstensi"
+  });
+  const BRAND_SUBTITLES = Object.freeze({
+    "zh-TW": "AI 網頁摘要與洞見助手",
+    en: "AI Web Summarizer & Insight Assistant",
+    ja: "AIウェブ要約・洞察アシスタント",
+    ko: "AI 웹 요약 및 인사이트 어시스턴트",
+    "zh-CN": "AI 网页摘要与洞察助手",
+    fr: "Assistant IA de résumé et d’analyse du Web",
+    es: "Asistente de IA para resúmenes y perspectivas web",
+    de: "KI-Assistent für Webzusammenfassungen und Einblicke",
+    vi: "Trợ lý AI tóm tắt và phân tích web",
+    th: "ผู้ช่วย AI สรุปและวิเคราะห์เว็บ",
+    id: "Asisten AI untuk Ringkasan dan Wawasan Web"
+  });
+
+  // Keep the public brand consistent across every localized options-page copy.
+  Object.keys(locales).forEach((locale) => {
+    locales[locale].strings.appTitle = BRAND_NAME;
+    locales[locale].strings.pageTitle = BRAND_PAGE_TITLES[locale];
+    locales[locale].strings.subtitle = BRAND_SUBTITLES[locale];
+  });
+
+  const POPUP_STRINGS = Object.freeze({
+    "zh-TW": {
+      popupPageTitle: "AUROFACT｜AI 網頁摘要與洞見助手",
+      popupProfileLabel: "⚡ 當前使用模型 / API：",
+      popupStatusLoading: "檢查設定中…",
+      popupStatusReading: "讀取 API 配置",
+      popupStatusReady: "API 已就緒",
+      popupStatusConfigured: "已配置 {name} ({model})",
+      popupStatusNoKey: "尚未設定 API Key",
+      popupStatusConfigure: "請至設定頁填入「{name}」的密鑰",
+      popupSummarizeNow: "立即總結當前網頁",
+      popupOpenOptions: "多組 API 設定管理",
+      popupTipLabel: "小提示：",
+      popupTipText: "在任何網頁點擊右鍵，即可一鍵總結重點或選取段落。"
+    },
+    en: {
+      popupPageTitle: "AUROFACT｜AI Web Summarizer & Insight Assistant",
+      popupProfileLabel: "⚡ Active model / API:",
+      popupStatusLoading: "Checking settings…",
+      popupStatusReading: "Loading API configuration",
+      popupStatusReady: "API ready",
+      popupStatusConfigured: "Configured {name} ({model})",
+      popupStatusNoKey: "API key not set",
+      popupStatusConfigure: "Open Settings to enter the key for “{name}”",
+      popupSummarizeNow: "Summarize this webpage",
+      popupOpenOptions: "Manage API profiles",
+      popupTipLabel: "Tip:",
+      popupTipText: "Right-click on any webpage to summarize it or process selected text."
+    },
+    ja: {
+      popupPageTitle: "AUROFACT｜AIウェブ要約・洞察アシスタント",
+      popupProfileLabel: "⚡ 現在のモデル / API:",
+      popupStatusLoading: "設定を確認中…",
+      popupStatusReading: "API設定を読み込み中",
+      popupStatusReady: "API 準備完了",
+      popupStatusConfigured: "設定済み: {name} ({model})",
+      popupStatusNoKey: "APIキー未設定",
+      popupStatusConfigure: "設定ページで「{name}」のキーを入力してください",
+      popupSummarizeNow: "このページを要約",
+      popupOpenOptions: "APIプロファイルを管理",
+      popupTipLabel: "ヒント:",
+      popupTipText: "ウェブページを右クリックすると、要約または選択したテキストの処理ができます。"
+    },
+    ko: {
+      popupPageTitle: "AUROFACT｜AI 웹 요약 및 인사이트 어시스턴트",
+      popupProfileLabel: "⚡ 현재 모델 / API:",
+      popupStatusLoading: "설정 확인 중…",
+      popupStatusReading: "API 구성 로드 중",
+      popupStatusReady: "API 준비 완료",
+      popupStatusConfigured: "{name} ({model}) 설정됨",
+      popupStatusNoKey: "API 키가 설정되지 않음",
+      popupStatusConfigure: "설정 페이지에서 ‘{name}’의 키를 입력하세요",
+      popupSummarizeNow: "현재 웹페이지 요약",
+      popupOpenOptions: "API 프로필 관리",
+      popupTipLabel: "팁:",
+      popupTipText: "웹페이지에서 마우스 오른쪽 버튼을 클릭하면 요약하거나 선택한 텍스트를 처리할 수 있습니다."
+    },
+    "zh-CN": {
+      popupPageTitle: "AUROFACT｜AI 网页摘要与洞察助手",
+      popupProfileLabel: "⚡ 当前使用模型 / API：",
+      popupStatusLoading: "正在检查设置…",
+      popupStatusReading: "正在读取 API 配置",
+      popupStatusReady: "API 已就绪",
+      popupStatusConfigured: "已配置 {name} ({model})",
+      popupStatusNoKey: "尚未设置 API Key",
+      popupStatusConfigure: "请前往设置页填写“{name}”的密钥",
+      popupSummarizeNow: "立即总结当前网页",
+      popupOpenOptions: "管理 API 配置",
+      popupTipLabel: "小提示：",
+      popupTipText: "在任何网页点击右键，即可一键总结重点或处理选中的段落。"
+    },
+    fr: {
+      popupPageTitle: "AUROFACT｜Assistant IA de résumé et d’analyse du Web",
+      popupProfileLabel: "⚡ Modèle / API actif :",
+      popupStatusLoading: "Vérification des paramètres…",
+      popupStatusReading: "Chargement de la configuration API",
+      popupStatusReady: "API prête",
+      popupStatusConfigured: "{name} ({model}) est configuré",
+      popupStatusNoKey: "API Key non définie",
+      popupStatusConfigure: "Ouvrez les paramètres pour saisir la clé de « {name} »",
+      popupSummarizeNow: "Résumer cette page web",
+      popupOpenOptions: "Gérer les profils API",
+      popupTipLabel: "Astuce :",
+      popupTipText: "Sur une page web, faites un clic droit pour résumer le contenu ou traiter le texte sélectionné."
+    },
+    es: {
+      popupPageTitle: "AUROFACT｜Asistente de IA para resúmenes y perspectivas web",
+      popupProfileLabel: "⚡ Modelo / API activo:",
+      popupStatusLoading: "Comprobando la configuración…",
+      popupStatusReading: "Cargando la configuración de API",
+      popupStatusReady: "API lista",
+      popupStatusConfigured: "{name} ({model}) configurado",
+      popupStatusNoKey: "API Key no configurada",
+      popupStatusConfigure: "Ve a Configuración para introducir la clave de «{name}»",
+      popupSummarizeNow: "Resumir esta página web",
+      popupOpenOptions: "Gestionar perfiles API",
+      popupTipLabel: "Consejo:",
+      popupTipText: "Haz clic derecho en cualquier página web para resumirla o procesar el texto seleccionado."
+    },
+    de: {
+      popupPageTitle: "AUROFACT｜KI-Assistent für Webzusammenfassungen und Einblicke",
+      popupProfileLabel: "⚡ Aktives Modell / API:",
+      popupStatusLoading: "Einstellungen werden geprüft…",
+      popupStatusReading: "API-Konfiguration wird geladen",
+      popupStatusReady: "API bereit",
+      popupStatusConfigured: "{name} ({model}) konfiguriert",
+      popupStatusNoKey: "API-Key nicht eingerichtet",
+      popupStatusConfigure: "Öffne die Einstellungen, um den Schlüssel für „{name}“ einzugeben",
+      popupSummarizeNow: "Diese Webseite zusammenfassen",
+      popupOpenOptions: "API-Profile verwalten",
+      popupTipLabel: "Tipp:",
+      popupTipText: "Klicke auf einer Webseite mit der rechten Maustaste, um sie zusammenzufassen oder ausgewählten Text zu verarbeiten."
+    },
+    vi: {
+      popupPageTitle: "AUROFACT｜Trợ lý AI tóm tắt và phân tích web",
+      popupProfileLabel: "⚡ Mô hình / API đang dùng:",
+      popupStatusLoading: "Đang kiểm tra cài đặt…",
+      popupStatusReading: "Đang tải cấu hình API",
+      popupStatusReady: "API đã sẵn sàng",
+      popupStatusConfigured: "Đã cấu hình {name} ({model})",
+      popupStatusNoKey: "Chưa thiết lập API Key",
+      popupStatusConfigure: "Mở Cài đặt để nhập khóa cho “{name}”",
+      popupSummarizeNow: "Tóm tắt trang web này",
+      popupOpenOptions: "Quản lý các hồ sơ API",
+      popupTipLabel: "Mẹo:",
+      popupTipText: "Nhấp chuột phải trên bất kỳ trang web nào để tóm tắt hoặc xử lý văn bản đã chọn."
+    },
+    th: {
+      popupPageTitle: "AUROFACT｜ผู้ช่วย AI สรุปและวิเคราะห์เว็บ",
+      popupProfileLabel: "⚡ โมเดล / API ที่ใช้งานอยู่:",
+      popupStatusLoading: "กำลังตรวจสอบการตั้งค่า…",
+      popupStatusReading: "กำลังโหลดการตั้งค่า API",
+      popupStatusReady: "API พร้อมใช้งาน",
+      popupStatusConfigured: "ตั้งค่า {name} ({model}) แล้ว",
+      popupStatusNoKey: "ยังไม่ได้ตั้งค่า API Key",
+      popupStatusConfigure: "ไปที่การตั้งค่าเพื่อกรอกคีย์ของ “{name}”",
+      popupSummarizeNow: "สรุปหน้าเว็บนี้",
+      popupOpenOptions: "จัดการโปรไฟล์ API",
+      popupTipLabel: "เคล็ดลับ:",
+      popupTipText: "คลิกขวาบนหน้าเว็บใดก็ได้เพื่อสรุปเนื้อหาหรือประมวลผลข้อความที่เลือก"
+    },
+    id: {
+      popupPageTitle: "AUROFACT｜Asisten AI untuk Ringkasan dan Wawasan Web",
+      popupProfileLabel: "⚡ Model / API aktif:",
+      popupStatusLoading: "Memeriksa pengaturan…",
+      popupStatusReading: "Memuat konfigurasi API",
+      popupStatusReady: "API siap",
+      popupStatusConfigured: "{name} ({model}) telah dikonfigurasi",
+      popupStatusNoKey: "API Key belum diatur",
+      popupStatusConfigure: "Buka Pengaturan untuk memasukkan kunci “{name}”",
+      popupSummarizeNow: "Ringkas halaman web ini",
+      popupOpenOptions: "Kelola profil API",
+      popupTipLabel: "Tips:",
+      popupTipText: "Klik kanan di halaman web mana pun untuk merangkum atau memproses teks yang dipilih."
+    }
+  });
+
+  Object.keys(POPUP_STRINGS).forEach((locale) => {
+    Object.assign(locales[locale].strings, POPUP_STRINGS[locale]);
   });
 
   const defaultLocale = "zh-TW";
