@@ -20,7 +20,9 @@
 ### ✨ 核心功能特色
 
 - 🚀 **右鍵一鍵總結**：在任何網頁點擊右鍵選單，選擇「📝 總結此網頁重點」即可開始摘要。
-- 🔍 **所選文字摘要**：選取網頁中特定段落反白後按右鍵，可針對選取文字單獨總結。
+- 🔍 **AI 選取文字工具**：選取網頁中特定段落後按右鍵選擇「AI 處理選取文字」，可進一步總結、翻譯、解釋、改寫、修正文法或輸入自訂指令。
+- 📤 **摘要匯出**：可將完整摘要與延伸對話下載為 Markdown（`.md`）或純文字（`.txt`）。
+- ⌨️ **快捷鍵摘要**：使用 `Alt + Shift + S` 快速摘要目前頁面，也可在瀏覽器的擴充功能快捷鍵設定中自訂。
 - ⚡ **多組 API 配置 (Multi-Profile) 快速切換**：
   - 可儲存任意多組獨立的 API 端點、金鑰、模型與提示詞。
   - **直接在懸浮視窗 Header 切換**：無需開啟設定頁，在網頁視窗上方下拉選單即可一秒切換不同模型！
@@ -46,7 +48,7 @@
 - ⚙️ **現代化多配置管理後台 (Options Page)**：
   - 左側配置清單與範本一鍵新增。
   - 獨立測試各組配置的連線狀態與延遲時間（ms）。
-  - 設定頁支援繁體中文、English、日本語與한국어切換；預設 System Prompt 會同步切換，自訂 Prompt 會保留原文。
+  - 設定頁與浮窗支援繁體中文、簡體中文、English、日本語、한국어、Français、Español、Deutsch、Tiếng Việt、ไทย與 Bahasa Indonesia；預設 System Prompt 會同步切換，自訂 Prompt 會保留原文。
 
 ---
 
@@ -65,13 +67,29 @@
 
 在網頁上執行總結後，摘要結果會顯示在右下角的浮動視窗中。視窗支援拖曳、自由調整大小、最小化，以及最大化至目前 viewport；回答串流輸出時，若使用者正在閱讀前面的內容，不會強制將畫面捲回最底部。
 
-![浮動摘要視窗](docs/screenshots/summary-panel.png)
+![浮動摘要視窗](docs/screenshots/floating-summary-en.png)
+
+#### 選取文字操作
+
+反白選取網頁文字後開啟右鍵選單，可選擇「AI 處理選取文字」開始進行後續操作：
+
+![選取文字後的右鍵選單](docs/screenshots/selection-actions-1.png)
+
+執行後會在浮窗中顯示選取內容，並提供總結、翻譯、解釋、改寫、修正文法與自訂指令等操作：
+
+![選取文字操作浮窗](docs/screenshots/selection-actions-2.png)
+
+#### 多語言介面
+
+設定頁右上角的語言下拉選單使用各語言的原生名稱，切換後設定頁、浮窗文字與預設 System Prompt 會同步使用該語言：
+
+![語言切換選單](docs/screenshots/language-selector.png)
 
 #### 多組 LLM Provider 設定
 
-開啟外掛設定頁後，可以在左側管理多組配置，分別設定 Provider、API Endpoint、API Key、模型、協議與 System Prompt。設定頁支援繁體中文、English、日本語與한국어；內建 System Prompt 會隨介面語言切換，自訂 Prompt 則會保留原文。
+開啟外掛設定頁後，可以在左側管理多組配置，分別設定 Provider、API Endpoint、API Key、模型、協議與 System Prompt。設定頁與浮窗支援繁體中文、簡體中文、English、日本語、한국어、Français、Español、Deutsch、Tiếng Việt、ไทย與 Bahasa Indonesia；內建 System Prompt 會隨介面語言切換，自訂 Prompt 則會保留原文。
 
-![LLM Provider 設定頁](docs/screenshots/settings-page.png)
+![LLM Provider 設定頁](docs/screenshots/settings-profiles.png)
 
 ---
 
@@ -88,8 +106,10 @@
 ### 📖 使用方式
 
 - **方法 A：右鍵選單總結全頁** ➜ 在網頁空白處按右鍵 ➜ 點選 **「📝 總結此網頁重點」**。
-- **方法 B：右鍵總結選取文字** ➜ 反白選取文字後按右鍵 ➜ 點選 **「📝 總結所選文字」**。
+- **方法 B：AI 處理選取文字** ➜ 反白選取文字後按右鍵 ➜ 點選 **「📝 AI 處理選取文字」** ➜ 在浮窗中選擇操作。
 - **方法 C：工具列快捷總結** ➜ 點擊瀏覽器工具列外掛圖示 ➜ 點選 **「⚡ 立即總結當前網頁」**。
+- **方法 D：鍵盤快捷總結** ➜ 按下 `Alt + Shift + S` 摘要目前頁面。
+- **匯出結果** ➜ 在浮窗底部選擇 `MD` 或 `TXT`，再點選 **「匯出」**。
 
 ---
 
@@ -100,7 +120,9 @@
 ### ✨ Key Features
 
 - 🚀 **Right-Click Instant Summary**: Right-click anywhere on a webpage and click **"📝 Summarize Page"** to get structured key points immediately.
-- 🔍 **Selection-Based Summarization**: Highlight any text passage, right-click, and select **"📝 Summarize Selected Text"**.
+- 🔍 **AI Selection Tools**: Highlight text, select **"📝 Process selected text with AI"**, then choose summarize, translate, explain, rewrite, grammar correction, or a custom instruction.
+- 📤 **Export Summaries**: Download the complete summary and follow-up conversation as Markdown (`.md`) or plain text (`.txt`).
+- ⌨️ **Keyboard Shortcut**: Press `Alt + Shift + S` to summarize the current page; the shortcut can be customized in the browser's extension shortcut settings.
 - ⚡ **Multi-Profile API Management & Instant Switching**:
   - Save unlimited custom API profiles with distinct endpoints, keys, models, and system prompts.
   - **In-Modal Quick Switcher**: Switch models on the fly directly from the floating modal's header dropdown without opening settings!
@@ -125,7 +147,7 @@
   - Double-click to auto-reset position to the bottom-right corner.
 - ⚙️ **Modern Options Dashboard**:
   - Manage multiple profiles, clone configurations, and test latency (ms) per profile in real-time.
-  - Switch the settings page between Traditional Chinese, English, Japanese, and Korean; default System Prompts follow the selected language while custom prompts are preserved.
+  - Switch the settings page and floating window between Traditional Chinese, Simplified Chinese, English, Japanese, Korean, French, Spanish, German, Vietnamese, Thai, and Indonesian; default System Prompts follow the selected language while custom prompts are preserved.
 
 ---
 
@@ -144,13 +166,29 @@
 
 After starting a summary, the result appears in a floating panel at the bottom-right of the webpage. The panel can be dragged, resized, minimized, or maximized to the current viewport. During streaming responses, it preserves the reader's position instead of forcibly scrolling to the bottom.
 
-![Floating summary panel](docs/screenshots/summary-panel.png)
+![Floating summary panel](docs/screenshots/floating-summary-en.png)
+
+#### Selected Text Actions
+
+Highlight text on a webpage and open the context menu to choose **"Process selected text with AI"** before selecting an operation:
+
+![Context menu for selected text actions](docs/screenshots/selection-actions-1.png)
+
+The floating panel then displays the selected content and provides actions such as summarize, translate, explain, rewrite, grammar correction, and custom instructions:
+
+![Floating panel for selected text actions](docs/screenshots/selection-actions-2.png)
+
+#### Multilingual Interface
+
+The language dropdown uses each language's native name. After switching, the options page, floating panel, and default System Prompt use the selected language:
+
+![Language selector](docs/screenshots/language-selector.png)
 
 #### LLM Provider Configuration
 
-The options page lets you manage multiple profiles with separate providers, API endpoints, API keys, models, protocols, and system prompts. The interface supports Traditional Chinese, English, Japanese, and Korean. Built-in system prompts follow the selected interface language, while custom prompts are preserved.
+The options page lets you manage multiple profiles with separate providers, API endpoints, API keys, models, protocols, and system prompts. The interface supports Traditional Chinese, Simplified Chinese, English, Japanese, Korean, French, Spanish, German, Vietnamese, Thai, and Indonesian. Built-in system prompts follow the selected interface language, while custom prompts are preserved.
 
-![LLM Provider settings page](docs/screenshots/settings-page.png)
+![LLM Provider settings page](docs/screenshots/settings-profiles.png)
 
 ---
 
@@ -167,8 +205,10 @@ The options page lets you manage multiple profiles with separate providers, API 
 ### 📖 How to Use
 
 - **Method A: Summarize Full Webpage** ➜ Right-click anywhere on the page ➜ Click **"📝 Summarize Page"**.
-- **Method B: Summarize Selected Text** ➜ Highlight any text ➜ Right-click ➜ Click **"📝 Summarize Selected Text"**.
+- **Method B: Process Selected Text** ➜ Highlight any text ➜ Right-click ➜ Click **"📝 Process selected text with AI"** ➜ Choose an operation in the floating panel.
 - **Method C: Toolbar Action** ➜ Click the extension icon in the toolbar ➜ Click **"⚡ Summarize Current Tab"**.
+- **Method D: Keyboard Shortcut** ➜ Press `Alt + Shift + S` to summarize the current page.
+- **Export Results** ➜ Select `MD` or `TXT` in the floating panel footer, then click **"Export"**.
 
 ---
 
@@ -178,7 +218,7 @@ To rebuild the standalone `.zip` distribution package:
 ```powershell
 python build_package.py
 ```
-Output will be generated in `dist/ai-web-summarizer-v1.2.3.zip`.
+Output will be generated in `dist/ai-web-summarizer-v1.4.0.zip`.
 
 ---
 

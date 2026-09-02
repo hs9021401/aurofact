@@ -33,7 +33,7 @@
         multiProfileBadge: "多組 API 自由切換",
         profilesHeading: "API 配置清單",
         contextSummarizePage: "📝 總結此網頁重點",
-        contextSummarizeSelection: "📝 總結所選文字",
+        contextSummarizeSelection: "📝 AI 處理選取文字",
         editingProfileEmpty: "編輯配置",
         activeInitial: "使用中",
         addProfile: "新增配置",
@@ -154,7 +154,7 @@ For subsequent multi-turn conversations, combine the original webpage content an
         multiProfileBadge: "Switch between API profiles",
         profilesHeading: "API Profiles",
         contextSummarizePage: "📝 Summarize this webpage",
-        contextSummarizeSelection: "📝 Summarize selected text",
+        contextSummarizeSelection: "📝 Process selected text with AI",
         editingProfileEmpty: "Edit profile",
         activeInitial: "Active",
         addProfile: "Add Profile",
@@ -275,7 +275,7 @@ For subsequent multi-turn conversations, combine the original webpage content an
         multiProfileBadge: "API プロファイルを切り替え",
         profilesHeading: "API プロファイル",
         contextSummarizePage: "📝 このウェブページを要約",
-        contextSummarizeSelection: "📝 選択したテキストを要約",
+        contextSummarizeSelection: "📝 選択テキストを AI で処理",
         editingProfileEmpty: "プロファイルを編集",
         activeInitial: "使用中",
         addProfile: "プロファイルを追加",
@@ -396,7 +396,7 @@ For subsequent multi-turn conversations, combine the original webpage content an
         multiProfileBadge: "API 프로필 전환",
         profilesHeading: "API 프로필 목록",
         contextSummarizePage: "📝 이 웹 페이지 요약",
-        contextSummarizeSelection: "📝 선택한 텍스트 요약",
+        contextSummarizeSelection: "📝 선택한 텍스트를 AI로 처리",
         editingProfileEmpty: "프로필 편집",
         activeInitial: "사용 중",
         addProfile: "프로필 추가",
@@ -488,6 +488,168 @@ For subsequent multi-turn conversations, combine the original webpage content an
     }
   };
 
+  Object.assign(locales, {
+    "zh-CN": {
+      label: "简体中文",
+      htmlLang: "zh-CN",
+      prompt: `你是一名专业的内容分析与深度讨论助手。请根据用户提供的网页内容或选中的文字，用准确、清晰、有条理的简体中文进行分析和回答。
+
+首次总结请遵循以下格式：
+### 📌 核心主题
+用 1-2 句话概括全文最重要的核心主题。
+
+### 💡 关键要点
+- 列出 3 至 6 个关键要点。
+- 重要数据、结论或步骤请使用**粗体**标注。
+
+### 🎯 结论与洞察
+简要总结作者的结论、实用建议或核心价值。
+
+后续多轮对话中，请结合网页原文和之前的总结，以亲切、专业的方式回答用户的后续问题。`,
+      strings: {
+        pageTitle: "扩展程序设置 - AI 网页重点总结（多组 API 管理）", logoAlt: "扩展程序图标", appTitle: "AI 网页重点总结", subtitle: "管理并快速切换多组 LLM API 配置（MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI）", languageLabel: "语言", languageOptionZhTw: "繁体中文", languageOptionEn: "英语", languageOptionJa: "日语", languageOptionKo: "韩语", languageChanged: "界面语言已切换为 {language}。默认 System Prompt 也已同步；自定义 Prompt 不会被覆盖。", multiProfileBadge: "多组 API 自由切换", profilesHeading: "API 配置列表", contextSummarizePage: "📝 总结此网页重点", contextSummarizeSelection: "📝 AI 处理选中文字", editingProfileEmpty: "编辑配置", activeInitial: "使用中", addProfile: "新增配置", addProfileTitle: "新增一组 API 配置", templateMenuTitle: "选择要新增的模型模板：", templateMinimaxName: "🟣 MiniMax-M3", templateMinimaxSub: "Anthropic 协议", templateDeepseekName: "🔵 DeepSeek V4 Flash", templateDeepseekSub: "OpenAI 协议", templateOpenaiName: "🟢 GPT-5.6 Luna", templateOpenaiSub: "OpenAI 官方协议", templateClaudeName: "🟠 Claude Sonnet 5", templateClaudeSub: "Anthropic 协议", templateOllamaName: "⚪ Ollama · Gemma 4 12B", templateOllamaSub: "localhost:11434（无需 Key）", templateZaiName: "🟡 Z.AI GLM-5.3", templateZaiSub: "兼容 OpenAI 协议", templateCustomName: "⚙️ 自定义空白配置", templateCustomSub: "自定义端点与模型", editingProfile: "编辑：{name}", activeDefault: "● 默认使用中", inactive: "未启用", setActive: "设为使用中", setActiveTitle: "将此配置设为当前默认使用", duplicate: "复制", duplicateTitle: "复制此配置", duplicateSuffix: "（副本）", delete: "删除", deleteTitle: "删除此配置", profileNameLabel: "配置名称（Profile Display Name）", profileNamePlaceholder: "例如：🟣 MiniMax-M3 或办公专用 DeepSeek", protocolFormatLabel: "API 协议格式（Protocol Format）", anthropicOption: "Anthropic Messages API 格式（MiniMax、Claude）", openaiOption: "OpenAI Chat Completions API 格式（OpenAI、DeepSeek、Z.AI、Groq、Ollama、OpenRouter）", endpointLabel: "API 端点 URL（Endpoint）", endpointPlaceholder: "https://api.minimaxi.com/anthropic/v1/messages", apiKeyLabel: "API Key（密钥）", apiKeyPlaceholder: "输入 API Key（例如：eyJhbGciOi... 或 sk-...）", toggleKeyTitle: "显示／隐藏 API Key", keyNotSet: "尚未设置", keyEntered: "已输入 Key", localNoKey: "本地免 Key", helpMinimax: "前往 MiniMax 开放平台获取 API Key ↗", helpDeepseek: "前往 DeepSeek 开放平台获取 API Key ↗", helpOpenai: "前往 OpenAI Platform 获取 API Key ↗", helpAnthropic: "前往 Anthropic Console 获取 API Key ↗", helpOllama: "Ollama 正在本地运行（无需密钥）", helpZai: "前往 Z.AI 开放平台获取 API Key ↗", helpGeneric: "前往 API 开放平台获取 API Key ↗", modelNameLabel: "模型名称（Model Name）", modelPlaceholder: "MiniMax-M3", systemPromptLabel: "系统提示词（System Prompt）", resetPrompt: "还原默认提示词", systemPromptPlaceholder: "输入引导 AI 如何总结与回答的提示词…", maxTokensLabel: "最大输出 Token", temperatureLabel: "生成温度", testConnection: "测试此配置连接", saveAll: "保存所有设置", unnamedProfile: "未命名配置", unsetModel: "未设置模型", protocolAnthropic: "Anthropic", protocolOpenAI: "OpenAI", activePill: "● 使用中", confirmKeepOne: "至少必须保留一组 API 配置，无法删除最后一组。", confirmDelete: "确定要删除“{name}”吗？", confirmResetPrompt: "确定要将系统提示词还原为默认模板吗？", toastActive: "已将此配置设为当前默认！", toastDuplicated: "已复制新配置！", toastDeleted: "已删除配置", toastResetPrompt: "已还原默认提示词", toastAdded: "已新增 {name} 配置！", testMissingKey: "⚠️ 请先输入“{name}”的 API Key 才能进行连接测试！", testRunningButton: "连接测试中…", testRequesting: "⏳ 正在向 [{name}] 发送测试请求…", testSuccessHeading: "✅ [{name}] 连接成功！", testProtocol: "协议格式", testModel: "模型响应", testLatency: "延迟时间", testReply: "测试回复", testReplyFallback: "OK", testFailedHeading: "❌ 连接失败：", testUnknownError: "未知错误，请检查端点、密钥与格式设置。", testRequestError: "❌ 请求发送异常：{message}", toastSaved: "🎉 所有 API 配置已成功保存！", backgroundMissingKey: "请先输入 API Key", backgroundHttpError: "连接失败（HTTP {status}）：{detail}", backgroundConnectionError: "连接异常：{message}"
+      }
+    },
+    fr: {
+      label: "Français", htmlLang: "fr",
+      prompt: `Vous êtes un assistant professionnel spécialisé dans l’analyse de contenu et les discussions approfondies. Analysez et répondez avec précision et clarté en français à partir du contenu de la page web ou du texte sélectionné fourni par l’utilisateur.
+
+Pour le résumé initial, suivez ce format :
+### 📌 Sujet principal
+Résumez le sujet central le plus important en 1 à 2 phrases.
+
+### 💡 Points clés
+- Listez 3 à 6 points clés.
+- Mettez en **gras** les données, conclusions ou étapes importantes.
+
+### 🎯 Conclusion et perspectives
+Résumez brièvement la conclusion de l’auteur, les recommandations pratiques ou la valeur principale.
+
+Dans les échanges suivants, utilisez le contenu original de la page et le résumé précédent pour répondre de manière approfondie, aimable et professionnelle.`,
+      strings: {
+        pageTitle: "Paramètres de l’extension - Résumeur web IA (profils API)", logoAlt: "Icône de l’extension", appTitle: "Résumeur web IA", subtitle: "Gérez et changez rapidement de profil API LLM (MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI)", languageLabel: "Langue", languageOptionZhTw: "Chinois traditionnel", languageOptionEn: "Anglais", languageOptionJa: "Japonais", languageOptionKo: "Coréen", languageChanged: "La langue de l’interface est passée à {language}. Le System Prompt par défaut a également été synchronisé ; les prompts personnalisés sont conservés.", multiProfileBadge: "Changer de profil API", profilesHeading: "Profils API", contextSummarizePage: "📝 Résumer cette page web", contextSummarizeSelection: "📝 Traiter le texte sélectionné avec l’IA", editingProfileEmpty: "Modifier le profil", activeInitial: "Actif", addProfile: "Ajouter un profil", addProfileTitle: "Ajouter un profil API", templateMenuTitle: "Choisissez un modèle à ajouter :", templateMinimaxName: "🟣 MiniMax-M3", templateMinimaxSub: "Protocole Anthropic", templateDeepseekName: "🔵 DeepSeek V4 Flash", templateDeepseekSub: "Protocole OpenAI", templateOpenaiName: "🟢 GPT-5.6 Luna", templateOpenaiSub: "Protocole officiel OpenAI", templateClaudeName: "🟠 Claude Sonnet 5", templateClaudeSub: "Protocole Anthropic", templateOllamaName: "⚪ Ollama · Gemma 4 12B", templateOllamaSub: "localhost:11434 (sans clé)", templateZaiName: "🟡 Z.AI GLM-5.3", templateZaiSub: "Compatible OpenAI", templateCustomName: "⚙️ Profil vierge personnalisé", templateCustomSub: "Endpoint et modèle personnalisés", editingProfile: "Modifier : {name}", activeDefault: "● Actif par défaut", inactive: "Inactif", setActive: "Activer", setActiveTitle: "Utiliser ce profil comme profil par défaut", duplicate: "Dupliquer", duplicateTitle: "Dupliquer ce profil", duplicateSuffix: " (copie)", delete: "Supprimer", deleteTitle: "Supprimer ce profil", profileNameLabel: "Nom du profil", profileNamePlaceholder: "ex. 🟣 MiniMax-M3 ou DeepSeek professionnel", protocolFormatLabel: "Format du protocole API", anthropicOption: "Anthropic Messages API (MiniMax, Claude)", openaiOption: "OpenAI Chat Completions API (OpenAI, DeepSeek, Z.AI, Groq, Ollama, OpenRouter)", endpointLabel: "URL de l’endpoint API", endpointPlaceholder: "https://api.minimaxi.com/anthropic/v1/messages", apiKeyLabel: "API Key", apiKeyPlaceholder: "Saisissez une API Key (ex. eyJhbGciOi... ou sk-...)", toggleKeyTitle: "Afficher / masquer l’API Key", keyNotSet: "Non définie", keyEntered: "Clé saisie", localNoKey: "Local, sans clé", helpMinimax: "Obtenir une API Key sur MiniMax Open Platform ↗", helpDeepseek: "Obtenir une API Key sur DeepSeek Open Platform ↗", helpOpenai: "Obtenir une API Key sur OpenAI Platform ↗", helpAnthropic: "Obtenir une API Key sur Anthropic Console ↗", helpOllama: "Ollama fonctionne en local (aucune clé requise)", helpZai: "Obtenir une API Key sur Z.AI Open Platform ↗", helpGeneric: "Obtenir une API Key auprès du fournisseur ↗", modelNameLabel: "Nom du modèle", modelPlaceholder: "MiniMax-M3", systemPromptLabel: "System Prompt", resetPrompt: "Restaurer le prompt par défaut", systemPromptPlaceholder: "Indiquez comment l’IA doit résumer et répondre…", maxTokensLabel: "Nombre maximal de tokens", temperatureLabel: "Température", testConnection: "Tester la connexion", saveAll: "Enregistrer tous les paramètres", unnamedProfile: "Profil sans nom", unsetModel: "Modèle non défini", protocolAnthropic: "Anthropic", protocolOpenAI: "OpenAI", activePill: "● Actif", confirmKeepOne: "Au moins un profil API doit être conservé ; le dernier ne peut pas être supprimé.", confirmDelete: "Voulez-vous supprimer « {name} » ?", confirmResetPrompt: "Restaurer le System Prompt par défaut ?", toastActive: "Ce profil est maintenant le profil par défaut !", toastDuplicated: "Profil dupliqué !", toastDeleted: "Profil supprimé", toastResetPrompt: "Prompt par défaut restauré", toastAdded: "Profil {name} ajouté !", testMissingKey: "⚠️ Saisissez l’API Key de « {name} » avant de tester la connexion.", testRunningButton: "Test de connexion…", testRequesting: "⏳ Envoi d’une requête de test à [{name}]…", testSuccessHeading: "✅ Connexion réussie pour [{name}] !", testProtocol: "Protocole", testModel: "Réponse du modèle", testLatency: "Latence", testReply: "Réponse de test", testReplyFallback: "OK", testFailedHeading: "❌ Échec de la connexion :", testUnknownError: "Erreur inconnue. Vérifiez l’endpoint, la clé et le format.", testRequestError: "❌ Erreur de requête : {message}", toastSaved: "🎉 Tous les profils API ont été enregistrés !", backgroundMissingKey: "Saisissez d’abord une API Key", backgroundHttpError: "Échec de la connexion (HTTP {status}) : {detail}", backgroundConnectionError: "Erreur de connexion : {message}"
+      }
+    },
+    es: {
+      label: "Español", htmlLang: "es",
+      prompt: `Eres un asistente profesional especializado en el análisis de contenidos y la conversación profunda. Analiza y responde con precisión y claridad en español basándote en el contenido de la página web o el texto seleccionado proporcionado por el usuario.
+
+Para el resumen inicial, sigue este formato:
+### 📌 Tema principal
+Resume el tema central más importante en 1 o 2 frases.
+
+### 💡 Puntos clave
+- Enumera de 3 a 6 puntos clave.
+- Marca en **negrita** los datos, conclusiones o pasos importantes.
+
+### 🎯 Conclusión e ideas
+Resume brevemente la conclusión del autor, las recomendaciones prácticas o el valor principal.
+
+En las conversaciones posteriores, combina el texto original de la página y el resumen anterior para responder de forma detallada, cordial y profesional.`,
+      strings: {
+        pageTitle: "Configuración de la extensión - Resumidor web con IA (perfiles API)", logoAlt: "Icono de la extensión", appTitle: "Resumidor web con IA", subtitle: "Administra y cambia rápidamente entre perfiles de API LLM (MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI)", languageLabel: "Idioma", languageOptionZhTw: "Chino tradicional", languageOptionEn: "Inglés", languageOptionJa: "Japonés", languageOptionKo: "Coreano", languageChanged: "El idioma de la interfaz cambió a {language}. El System Prompt predeterminado también se sincronizó; los prompts personalizados se conservaron.", multiProfileBadge: "Cambiar entre perfiles API", profilesHeading: "Perfiles API", contextSummarizePage: "📝 Resumir esta página web", contextSummarizeSelection: "📝 Procesar el texto seleccionado con IA", editingProfileEmpty: "Editar perfil", activeInitial: "Activo", addProfile: "Añadir perfil", addProfileTitle: "Añadir un perfil API", templateMenuTitle: "Elige una plantilla de modelo para añadir:", templateMinimaxName: "🟣 MiniMax-M3", templateMinimaxSub: "Protocolo Anthropic", templateDeepseekName: "🔵 DeepSeek V4 Flash", templateDeepseekSub: "Protocolo OpenAI", templateOpenaiName: "🟢 GPT-5.6 Luna", templateOpenaiSub: "Protocolo oficial de OpenAI", templateClaudeName: "🟠 Claude Sonnet 5", templateClaudeSub: "Protocolo Anthropic", templateOllamaName: "⚪ Ollama · Gemma 4 12B", templateOllamaSub: "localhost:11434 (sin clave)", templateZaiName: "🟡 Z.AI GLM-5.3", templateZaiSub: "Compatible con OpenAI", templateCustomName: "⚙️ Perfil vacío personalizado", templateCustomSub: "Endpoint y modelo personalizados", editingProfile: "Editar: {name}", activeDefault: "● Activo por defecto", inactive: "Inactivo", setActive: "Activar", setActiveTitle: "Usar este perfil como predeterminado", duplicate: "Duplicar", duplicateTitle: "Duplicar este perfil", duplicateSuffix: " (copia)", delete: "Eliminar", deleteTitle: "Eliminar este perfil", profileNameLabel: "Nombre del perfil", profileNamePlaceholder: "p. ej. 🟣 MiniMax-M3 o DeepSeek de oficina", protocolFormatLabel: "Formato del protocolo API", anthropicOption: "Anthropic Messages API (MiniMax, Claude)", openaiOption: "OpenAI Chat Completions API (OpenAI, DeepSeek, Z.AI, Groq, Ollama, OpenRouter)", endpointLabel: "URL del endpoint API", endpointPlaceholder: "https://api.minimaxi.com/anthropic/v1/messages", apiKeyLabel: "API Key", apiKeyPlaceholder: "Introduce una API Key (p. ej. eyJhbGciOi... o sk-...)", toggleKeyTitle: "Mostrar / ocultar API Key", keyNotSet: "No configurada", keyEntered: "Clave introducida", localNoKey: "Local, sin clave", helpMinimax: "Obtén una API Key en MiniMax Open Platform ↗", helpDeepseek: "Obtén una API Key en DeepSeek Open Platform ↗", helpOpenai: "Obtén una API Key en OpenAI Platform ↗", helpAnthropic: "Obtén una API Key en Anthropic Console ↗", helpOllama: "Ollama se ejecuta localmente (no requiere clave)", helpZai: "Obtén una API Key en Z.AI Open Platform ↗", helpGeneric: "Obtén una API Key del proveedor de API ↗", modelNameLabel: "Nombre del modelo", modelPlaceholder: "MiniMax-M3", systemPromptLabel: "System Prompt", resetPrompt: "Restaurar prompt predeterminado", systemPromptPlaceholder: "Indica cómo debe resumir y responder la IA…", maxTokensLabel: "Tokens máximos de salida", temperatureLabel: "Temperatura", testConnection: "Probar conexión", saveAll: "Guardar todos los ajustes", unnamedProfile: "Perfil sin nombre", unsetModel: "Modelo no configurado", protocolAnthropic: "Anthropic", protocolOpenAI: "OpenAI", activePill: "● Activo", confirmKeepOne: "Debe quedar al menos un perfil API; no se puede eliminar el último.", confirmDelete: "¿Seguro que quieres eliminar «{name}»?", confirmResetPrompt: "¿Restaurar el System Prompt predeterminado?", toastActive: "Este perfil es ahora el predeterminado.", toastDuplicated: "¡Perfil duplicado!", toastDeleted: "Perfil eliminado", toastResetPrompt: "Prompt predeterminado restaurado", toastAdded: "¡Perfil {name} añadido!", testMissingKey: "⚠️ Introduce la API Key de «{name}» antes de probar la conexión.", testRunningButton: "Probando conexión…", testRequesting: "⏳ Enviando una solicitud de prueba a [{name}]…", testSuccessHeading: "✅ ¡Conexión correcta para [{name}]!", testProtocol: "Protocolo", testModel: "Respuesta del modelo", testLatency: "Latencia", testReply: "Respuesta de prueba", testReplyFallback: "OK", testFailedHeading: "❌ Error de conexión:", testUnknownError: "Error desconocido. Comprueba el endpoint, la clave y el formato.", testRequestError: "❌ Error de solicitud: {message}", toastSaved: "🎉 ¡Todos los perfiles API se guardaron correctamente!", backgroundMissingKey: "Introduce primero una API Key", backgroundHttpError: "Error de conexión (HTTP {status}): {detail}", backgroundConnectionError: "Error de conexión: {message}"
+      }
+    },
+    de: {
+      label: "Deutsch", htmlLang: "de",
+      prompt: `Du bist ein professioneller Assistent für Inhaltsanalyse und vertiefende Diskussionen. Analysiere die vom Nutzer bereitgestellten Webseiteninhalte oder ausgewählten Text präzise, klar und strukturiert auf Deutsch und beantworte die Fragen entsprechend.
+
+Verwende für die erste Zusammenfassung dieses Format:
+### 📌 Kernthema
+Fasse das wichtigste zentrale Thema in 1–2 Sätzen zusammen.
+
+### 💡 Wichtige Punkte
+- Liste 3 bis 6 wichtige Punkte auf.
+- Hebe wichtige Daten, Schlussfolgerungen oder Schritte mit **Fettdruck** hervor.
+
+### 🎯 Fazit und Erkenntnisse
+Fasse das Fazit des Autors, praktische Empfehlungen oder den wichtigsten Nutzen kurz zusammen.
+
+Beziehe dich in weiteren Gesprächsrunden auf den ursprünglichen Webseiteninhalt und die vorherige Zusammenfassung und antworte freundlich, gründlich und professionell.`,
+      strings: {
+        pageTitle: "Erweiterungseinstellungen - KI-Webzusammenfassung (API-Profile)", logoAlt: "Erweiterungssymbol", appTitle: "KI-Webzusammenfassung", subtitle: "Mehrere LLM-API-Profile verwalten und schnell wechseln (MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI)", languageLabel: "Sprache", languageOptionZhTw: "Traditionelles Chinesisch", languageOptionEn: "Englisch", languageOptionJa: "Japanisch", languageOptionKo: "Koreanisch", languageChanged: "Die Oberflächensprache wurde auf {language} geändert. Der standardmäßige System Prompt wurde ebenfalls synchronisiert; benutzerdefinierte Prompts bleiben erhalten.", multiProfileBadge: "Zwischen API-Profilen wechseln", profilesHeading: "API-Profile", contextSummarizePage: "📝 Diese Webseite zusammenfassen", contextSummarizeSelection: "📝 Ausgewählten Text mit KI verarbeiten", editingProfileEmpty: "Profil bearbeiten", activeInitial: "Aktiv", addProfile: "Profil hinzufügen", addProfileTitle: "API-Profil hinzufügen", templateMenuTitle: "Wähle eine Modellvorlage aus:", templateMinimaxName: "🟣 MiniMax-M3", templateMinimaxSub: "Anthropic-Protokoll", templateDeepseekName: "🔵 DeepSeek V4 Flash", templateDeepseekSub: "OpenAI-Protokoll", templateOpenaiName: "🟢 GPT-5.6 Luna", templateOpenaiSub: "Offizielles OpenAI-Protokoll", templateClaudeName: "🟠 Claude Sonnet 5", templateClaudeSub: "Anthropic-Protokoll", templateOllamaName: "⚪ Ollama · Gemma 4 12B", templateOllamaSub: "localhost:11434 (kein Key)", templateZaiName: "🟡 Z.AI GLM-5.3", templateZaiSub: "OpenAI-kompatibles Protokoll", templateCustomName: "⚙️ Leeres benutzerdefiniertes Profil", templateCustomSub: "Benutzerdefinierter Endpunkt und Modell", editingProfile: "Bearbeiten: {name}", activeDefault: "● Standardmäßig aktiv", inactive: "Inaktiv", setActive: "Aktiv setzen", setActiveTitle: "Dieses Profil als aktuellen Standard verwenden", duplicate: "Duplizieren", duplicateTitle: "Dieses Profil duplizieren", duplicateSuffix: " (Kopie)", delete: "Löschen", deleteTitle: "Dieses Profil löschen", profileNameLabel: "Profilname", profileNamePlaceholder: "z. B. 🟣 MiniMax-M3 oder DeepSeek Büro", protocolFormatLabel: "API-Protokollformat", anthropicOption: "Anthropic Messages API (MiniMax, Claude)", openaiOption: "OpenAI Chat Completions API (OpenAI, DeepSeek, Z.AI, Groq, Ollama, OpenRouter)", endpointLabel: "API-Endpunkt-URL", endpointPlaceholder: "https://api.minimaxi.com/anthropic/v1/messages", apiKeyLabel: "API Key", apiKeyPlaceholder: "API Key eingeben (z. B. eyJhbGciOi... oder sk-...)", toggleKeyTitle: "API Key anzeigen / ausblenden", keyNotSet: "Nicht festgelegt", keyEntered: "Key eingegeben", localNoKey: "Lokal, kein Key erforderlich", helpMinimax: "API Key auf der MiniMax Open Platform erhalten ↗", helpDeepseek: "API Key auf der DeepSeek Open Platform erhalten ↗", helpOpenai: "API Key auf der OpenAI Platform erhalten ↗", helpAnthropic: "API Key über die Anthropic Console erhalten ↗", helpOllama: "Ollama läuft lokal (kein Key erforderlich)", helpZai: "API Key auf der Z.AI Open Platform erhalten ↗", helpGeneric: "API Key beim API-Anbieter erhalten ↗", modelNameLabel: "Modellname", modelPlaceholder: "MiniMax-M3", systemPromptLabel: "System Prompt", resetPrompt: "Standard-Prompt wiederherstellen", systemPromptPlaceholder: "Anweisungen für Zusammenfassungen und Antworten der KI eingeben…", maxTokensLabel: "Maximale Ausgabe-Tokens", temperatureLabel: "Temperatur", testConnection: "Verbindung testen", saveAll: "Alle Einstellungen speichern", unnamedProfile: "Unbenanntes Profil", unsetModel: "Modell nicht festgelegt", protocolAnthropic: "Anthropic", protocolOpenAI: "OpenAI", activePill: "● Aktiv", confirmKeepOne: "Mindestens ein API-Profil muss bleiben; das letzte Profil kann nicht gelöscht werden.", confirmDelete: "Möchtest du „{name}“ wirklich löschen?", confirmResetPrompt: "System Prompt auf die Standardvorlage zurücksetzen?", toastActive: "Dieses Profil ist jetzt der aktuelle Standard!", toastDuplicated: "Profil dupliziert!", toastDeleted: "Profil gelöscht", toastResetPrompt: "Standard-Prompt wiederhergestellt", toastAdded: "Profil {name} hinzugefügt!", testMissingKey: "⚠️ Gib vor dem Verbindungstest den API Key für „{name}“ ein.", testRunningButton: "Verbindung wird getestet…", testRequesting: "⏳ Testanfrage an [{name}] wird gesendet…", testSuccessHeading: "✅ Verbindung für [{name}] erfolgreich!", testProtocol: "Protokoll", testModel: "Modellantwort", testLatency: "Latenz", testReply: "Testantwort", testReplyFallback: "OK", testFailedHeading: "❌ Verbindung fehlgeschlagen:", testUnknownError: "Unbekannter Fehler. Prüfe Endpunkt, Key und Format.", testRequestError: "❌ Anfragefehler: {message}", toastSaved: "🎉 Alle API-Profile wurden erfolgreich gespeichert!", backgroundMissingKey: "Gib zuerst einen API Key ein", backgroundHttpError: "Verbindung fehlgeschlagen (HTTP {status}): {detail}", backgroundConnectionError: "Verbindungsfehler: {message}"
+      }
+    },
+    vi: {
+      label: "Tiếng Việt", htmlLang: "vi",
+      prompt: `Bạn là trợ lý chuyên nghiệp về phân tích nội dung và thảo luận chuyên sâu. Hãy phân tích chính xác, rõ ràng bằng tiếng Việt dựa trên nội dung trang web hoặc văn bản được người dùng chọn.
+
+Với bản tóm tắt ban đầu, hãy dùng định dạng sau:
+### 📌 Chủ đề chính
+Tóm tắt chủ đề trung tâm quan trọng nhất trong 1-2 câu.
+
+### 💡 Các điểm chính
+- Liệt kê 3 đến 6 điểm chính.
+- In đậm dữ liệu, kết luận hoặc bước quan trọng bằng **in đậm**.
+
+### 🎯 Kết luận và thông tin chi tiết
+Tóm tắt ngắn gọn kết luận, đề xuất thực tế hoặc giá trị chính của tác giả.
+
+Trong các lượt trò chuyện tiếp theo, hãy kết hợp nội dung trang web gốc và bản tóm tắt trước đó để trả lời thân thiện, chuyên nghiệp và đầy đủ.`,
+      strings: {
+        pageTitle: "Cài đặt tiện ích - Tóm tắt web AI (nhiều hồ sơ API)", logoAlt: "Biểu tượng tiện ích", appTitle: "Tóm tắt web AI", subtitle: "Quản lý và chuyển nhanh giữa nhiều hồ sơ API LLM (MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI)", languageLabel: "Ngôn ngữ", languageOptionZhTw: "Tiếng Trung phồn thể", languageOptionEn: "Tiếng Anh", languageOptionJa: "Tiếng Nhật", languageOptionKo: "Tiếng Hàn", languageChanged: "Ngôn ngữ giao diện đã chuyển sang {language}. System Prompt mặc định cũng đã được đồng bộ; Prompt tùy chỉnh được giữ nguyên.", multiProfileBadge: "Chuyển đổi hồ sơ API", profilesHeading: "Danh sách hồ sơ API", contextSummarizePage: "📝 Tóm tắt trang web này", contextSummarizeSelection: "📝 Dùng AI xử lý văn bản đã chọn", editingProfileEmpty: "Chỉnh sửa hồ sơ", activeInitial: "Đang dùng", addProfile: "Thêm hồ sơ", addProfileTitle: "Thêm hồ sơ API", templateMenuTitle: "Chọn mẫu mô hình muốn thêm:", templateMinimaxName: "🟣 MiniMax-M3", templateMinimaxSub: "Giao thức Anthropic", templateDeepseekName: "🔵 DeepSeek V4 Flash", templateDeepseekSub: "Giao thức OpenAI", templateOpenaiName: "🟢 GPT-5.6 Luna", templateOpenaiSub: "Giao thức chính thức của OpenAI", templateClaudeName: "🟠 Claude Sonnet 5", templateClaudeSub: "Giao thức Anthropic", templateOllamaName: "⚪ Ollama · Gemma 4 12B", templateOllamaSub: "localhost:11434 (không cần Key)", templateZaiName: "🟡 Z.AI GLM-5.3", templateZaiSub: "Tương thích OpenAI", templateCustomName: "⚙️ Hồ sơ trống tùy chỉnh", templateCustomSub: "Endpoint và mô hình tùy chỉnh", editingProfile: "Chỉnh sửa: {name}", activeDefault: "● Đang dùng mặc định", inactive: "Chưa kích hoạt", setActive: "Đặt làm hồ sơ đang dùng", setActiveTitle: "Dùng hồ sơ này làm mặc định hiện tại", duplicate: "Nhân bản", duplicateTitle: "Nhân bản hồ sơ này", duplicateSuffix: " (bản sao)", delete: "Xóa", deleteTitle: "Xóa hồ sơ này", profileNameLabel: "Tên hồ sơ", profileNamePlaceholder: "ví dụ: 🟣 MiniMax-M3 hoặc DeepSeek văn phòng", protocolFormatLabel: "Định dạng giao thức API", anthropicOption: "Anthropic Messages API (MiniMax, Claude)", openaiOption: "OpenAI Chat Completions API (OpenAI, DeepSeek, Z.AI, Groq, Ollama, OpenRouter)", endpointLabel: "URL endpoint API", endpointPlaceholder: "https://api.minimaxi.com/anthropic/v1/messages", apiKeyLabel: "API Key", apiKeyPlaceholder: "Nhập API Key (ví dụ: eyJhbGciOi... hoặc sk-...)", toggleKeyTitle: "Hiện / ẩn API Key", keyNotSet: "Chưa thiết lập", keyEntered: "Đã nhập Key", localNoKey: "Cục bộ, không cần Key", helpMinimax: "Lấy API Key từ MiniMax Open Platform ↗", helpDeepseek: "Lấy API Key từ DeepSeek Open Platform ↗", helpOpenai: "Lấy API Key từ OpenAI Platform ↗", helpAnthropic: "Lấy API Key từ Anthropic Console ↗", helpOllama: "Ollama đang chạy cục bộ (không cần Key)", helpZai: "Lấy API Key từ Z.AI Open Platform ↗", helpGeneric: "Lấy API Key từ nhà cung cấp API ↗", modelNameLabel: "Tên mô hình", modelPlaceholder: "MiniMax-M3", systemPromptLabel: "System Prompt", resetPrompt: "Khôi phục Prompt mặc định", systemPromptPlaceholder: "Nhập hướng dẫn cách AI tóm tắt và trả lời…", maxTokensLabel: "Token đầu ra tối đa", temperatureLabel: "Nhiệt độ tạo", testConnection: "Kiểm tra kết nối", saveAll: "Lưu tất cả cài đặt", unnamedProfile: "Hồ sơ chưa đặt tên", unsetModel: "Chưa đặt mô hình", protocolAnthropic: "Anthropic", protocolOpenAI: "OpenAI", activePill: "● Đang dùng", confirmKeepOne: "Phải giữ lại ít nhất một hồ sơ API; không thể xóa hồ sơ cuối cùng.", confirmDelete: "Bạn có chắc muốn xóa “{name}” không?", confirmResetPrompt: "Khôi phục System Prompt về mẫu mặc định?", toastActive: "Đã đặt hồ sơ này làm mặc định hiện tại!", toastDuplicated: "Đã nhân bản hồ sơ!", toastDeleted: "Đã xóa hồ sơ", toastResetPrompt: "Đã khôi phục Prompt mặc định", toastAdded: "Đã thêm hồ sơ {name}!", testMissingKey: "⚠️ Hãy nhập API Key của “{name}” trước khi kiểm tra kết nối.", testRunningButton: "Đang kiểm tra kết nối…", testRequesting: "⏳ Đang gửi yêu cầu kiểm tra đến [{name}]…", testSuccessHeading: "✅ Kết nối [{name}] thành công!", testProtocol: "Giao thức", testModel: "Phản hồi mô hình", testLatency: "Độ trễ", testReply: "Phản hồi kiểm tra", testReplyFallback: "OK", testFailedHeading: "❌ Kết nối thất bại:", testUnknownError: "Lỗi không xác định. Hãy kiểm tra endpoint, Key và định dạng.", testRequestError: "❌ Lỗi yêu cầu: {message}", toastSaved: "🎉 Đã lưu thành công tất cả hồ sơ API!", backgroundMissingKey: "Trước tiên hãy nhập API Key", backgroundHttpError: "Kết nối thất bại (HTTP {status}): {detail}", backgroundConnectionError: "Lỗi kết nối: {message}"
+      }
+    },
+    th: {
+      label: "ไทย", htmlLang: "th",
+      prompt: `คุณเป็นผู้ช่วยมืออาชีพด้านการวิเคราะห์เนื้อหาและการอภิปรายเชิงลึก โปรดวิเคราะห์และตอบเป็นภาษาไทยอย่างแม่นยำ ชัดเจน และเป็นระบบ โดยอ้างอิงจากเนื้อหาเว็บหรือข้อความที่ผู้ใช้เลือก
+
+สำหรับสรุปครั้งแรก ให้ใช้รูปแบบต่อไปนี้:
+### 📌 ประเด็นหลัก
+สรุปประเด็นสำคัญที่สุดของเนื้อหาใน 1-2 ประโยค
+
+### 💡 ประเด็นสำคัญ
+- ระบุประเด็นสำคัญ 3 ถึง 6 ข้อ
+- ใช้ **ตัวหนา** กับข้อมูล ข้อสรุป หรือขั้นตอนที่สำคัญ
+
+### 🎯 บทสรุปและข้อค้นพบ
+สรุปข้อสรุปของผู้เขียน คำแนะนำที่นำไปใช้ได้จริง หรือคุณค่าหลักอย่างกระชับ
+
+ในการสนทนาต่อเนื่อง ให้ผสานเนื้อหาเว็บต้นฉบับและบทสรุปก่อนหน้า เพื่อตอบคำถามอย่างเป็นมิตร ละเอียด และเป็นมืออาชีพ`,
+      strings: {
+        pageTitle: "การตั้งค่าส่วนขยาย - AI สรุปเว็บ (หลายโปรไฟล์ API)", logoAlt: "ไอคอนส่วนขยาย", appTitle: "AI สรุปเว็บ", subtitle: "จัดการและสลับโปรไฟล์ LLM API หลายชุดได้อย่างรวดเร็ว (MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI)", languageLabel: "ภาษา", languageOptionZhTw: "ภาษาจีนตัวเต็ม", languageOptionEn: "ภาษาอังกฤษ", languageOptionJa: "ภาษาญี่ปุ่น", languageOptionKo: "ภาษาเกาหลี", languageChanged: "เปลี่ยนภาษาของอินเทอร์เฟซเป็น {language} แล้ว System Prompt เริ่มต้นก็ซิงค์แล้ว ส่วน Prompt ที่กำหนดเองจะยังคงเดิม", multiProfileBadge: "สลับโปรไฟล์ API", profilesHeading: "รายการโปรไฟล์ API", contextSummarizePage: "📝 สรุปหน้าเว็บนี้", contextSummarizeSelection: "📝 ให้ AI ประมวลผลข้อความที่เลือก", editingProfileEmpty: "แก้ไขโปรไฟล์", activeInitial: "ใช้งานอยู่", addProfile: "เพิ่มโปรไฟล์", addProfileTitle: "เพิ่มโปรไฟล์ API", templateMenuTitle: "เลือกเทมเพลตโมเดลที่จะเพิ่ม:", templateMinimaxName: "🟣 MiniMax-M3", templateMinimaxSub: "โปรโตคอล Anthropic", templateDeepseekName: "🔵 DeepSeek V4 Flash", templateDeepseekSub: "โปรโตคอล OpenAI", templateOpenaiName: "🟢 GPT-5.6 Luna", templateOpenaiSub: "โปรโตคอลอย่างเป็นทางการของ OpenAI", templateClaudeName: "🟠 Claude Sonnet 5", templateClaudeSub: "โปรโตคอล Anthropic", templateOllamaName: "⚪ Ollama · Gemma 4 12B", templateOllamaSub: "localhost:11434 (ไม่ต้องใช้ Key)", templateZaiName: "🟡 Z.AI GLM-5.3", templateZaiSub: "โปรโตคอลที่เข้ากันได้กับ OpenAI", templateCustomName: "⚙️ โปรไฟล์ว่างกำหนดเอง", templateCustomSub: "Endpoint และโมเดลกำหนดเอง", editingProfile: "แก้ไข: {name}", activeDefault: "● ใช้งานเป็นค่าเริ่มต้น", inactive: "ไม่ได้เปิดใช้งาน", setActive: "ตั้งเป็นโปรไฟล์ที่ใช้งาน", setActiveTitle: "ใช้โปรไฟล์นี้เป็นค่าเริ่มต้นปัจจุบัน", duplicate: "ทำสำเนา", duplicateTitle: "ทำสำเนาโปรไฟล์นี้", duplicateSuffix: " (สำเนา)", delete: "ลบ", deleteTitle: "ลบโปรไฟล์นี้", profileNameLabel: "ชื่อโปรไฟล์", profileNamePlaceholder: "เช่น 🟣 MiniMax-M3 หรือ DeepSeek สำหรับสำนักงาน", protocolFormatLabel: "รูปแบบโปรโตคอล API", anthropicOption: "Anthropic Messages API (MiniMax, Claude)", openaiOption: "OpenAI Chat Completions API (OpenAI, DeepSeek, Z.AI, Groq, Ollama, OpenRouter)", endpointLabel: "URL Endpoint ของ API", endpointPlaceholder: "https://api.minimaxi.com/anthropic/v1/messages", apiKeyLabel: "API Key", apiKeyPlaceholder: "ป้อน API Key (เช่น eyJhbGciOi... หรือ sk-...)", toggleKeyTitle: "แสดง / ซ่อน API Key", keyNotSet: "ยังไม่ได้ตั้งค่า", keyEntered: "ป้อน Key แล้ว", localNoKey: "ใช้ในเครื่อง ไม่ต้องใช้ Key", helpMinimax: "รับ API Key จาก MiniMax Open Platform ↗", helpDeepseek: "รับ API Key จาก DeepSeek Open Platform ↗", helpOpenai: "รับ API Key จาก OpenAI Platform ↗", helpAnthropic: "รับ API Key จาก Anthropic Console ↗", helpOllama: "Ollama กำลังทำงานในเครื่อง (ไม่ต้องใช้ Key)", helpZai: "รับ API Key จาก Z.AI Open Platform ↗", helpGeneric: "รับ API Key จากผู้ให้บริการ API ↗", modelNameLabel: "ชื่อโมเดล", modelPlaceholder: "MiniMax-M3", systemPromptLabel: "System Prompt", resetPrompt: "คืนค่า Prompt เริ่มต้น", systemPromptPlaceholder: "ป้อนคำแนะนำวิธีให้ AI สรุปและตอบ…", maxTokensLabel: "Token เอาต์พุตสูงสุด", temperatureLabel: "อุณหภูมิการสร้าง", testConnection: "ทดสอบการเชื่อมต่อ", saveAll: "บันทึกการตั้งค่าทั้งหมด", unnamedProfile: "โปรไฟล์ไม่มีชื่อ", unsetModel: "ยังไม่ได้ตั้งโมเดล", protocolAnthropic: "Anthropic", protocolOpenAI: "OpenAI", activePill: "● ใช้งานอยู่", confirmKeepOne: "ต้องมีโปรไฟล์ API อย่างน้อยหนึ่งรายการ ไม่สามารถลบโปรไฟล์สุดท้ายได้", confirmDelete: "ต้องการลบ “{name}” ใช่หรือไม่", confirmResetPrompt: "คืนค่า System Prompt เป็นเทมเพลตเริ่มต้นหรือไม่", toastActive: "ตั้งโปรไฟล์นี้เป็นค่าเริ่มต้นปัจจุบันแล้ว!", toastDuplicated: "ทำสำเนาโปรไฟล์แล้ว!", toastDeleted: "ลบโปรไฟล์แล้ว", toastResetPrompt: "คืนค่า Prompt เริ่มต้นแล้ว", toastAdded: "เพิ่มโปรไฟล์ {name} แล้ว!", testMissingKey: "⚠️ ป้อน API Key ของ “{name}” ก่อนทดสอบการเชื่อมต่อ", testRunningButton: "กำลังทดสอบการเชื่อมต่อ…", testRequesting: "⏳ กำลังส่งคำขอทดสอบไปยัง [{name}]…", testSuccessHeading: "✅ เชื่อมต่อ [{name}] สำเร็จ!", testProtocol: "โปรโตคอล", testModel: "การตอบกลับของโมเดล", testLatency: "เวลาแฝง", testReply: "การตอบกลับทดสอบ", testReplyFallback: "OK", testFailedHeading: "❌ เชื่อมต่อล้มเหลว:", testUnknownError: "ข้อผิดพลาดที่ไม่รู้จัก โปรดตรวจสอบ Endpoint, Key และรูปแบบ", testRequestError: "❌ ข้อผิดพลาดของคำขอ: {message}", toastSaved: "🎉 บันทึกโปรไฟล์ API ทั้งหมดสำเร็จ!", backgroundMissingKey: "โปรดป้อน API Key ก่อน", backgroundHttpError: "เชื่อมต่อล้มเหลว (HTTP {status}): {detail}", backgroundConnectionError: "ข้อผิดพลาดการเชื่อมต่อ: {message}"
+      }
+    },
+    id: {
+      label: "Bahasa Indonesia", htmlLang: "id",
+      prompt: `Anda adalah asisten profesional untuk analisis konten dan diskusi mendalam. Analisis dan jawab dengan tepat, jelas, dan terstruktur dalam bahasa Indonesia berdasarkan isi halaman web atau teks yang dipilih pengguna.
+
+Untuk ringkasan awal, gunakan format berikut:
+### 📌 Topik Utama
+Ringkas topik utama yang paling penting dalam 1-2 kalimat.
+
+### 💡 Poin Penting
+- Daftar 3 hingga 6 poin penting.
+- Tebalkan data, kesimpulan, atau langkah penting dengan **tebal**.
+
+### 🎯 Kesimpulan dan Wawasan
+Ringkas kesimpulan penulis, rekomendasi praktis, atau nilai utama secara singkat.
+
+Dalam percakapan berikutnya, gabungkan isi asli halaman web dan ringkasan sebelumnya untuk menjawab pertanyaan lanjutan pengguna secara ramah, menyeluruh, dan profesional.`,
+      strings: {
+        pageTitle: "Pengaturan Ekstensi - Ringkasan Web AI (Profil API)", logoAlt: "Ikon ekstensi", appTitle: "Ringkasan Web AI", subtitle: "Kelola dan beralih dengan cepat di antara beberapa profil API LLM (MiniMax / DeepSeek / OpenAI / Claude / Ollama / Z.AI)", languageLabel: "Bahasa", languageOptionZhTw: "Bahasa Tionghoa Tradisional", languageOptionEn: "Bahasa Inggris", languageOptionJa: "Bahasa Jepang", languageOptionKo: "Bahasa Korea", languageChanged: "Bahasa antarmuka diubah ke {language}. System Prompt default juga disinkronkan; Prompt khusus tetap dipertahankan.", multiProfileBadge: "Beralih antarprofil API", profilesHeading: "Daftar Profil API", contextSummarizePage: "📝 Ringkas halaman web ini", contextSummarizeSelection: "📝 Proses teks yang dipilih dengan AI", editingProfileEmpty: "Edit profil", activeInitial: "Aktif", addProfile: "Tambah Profil", addProfileTitle: "Tambah profil API", templateMenuTitle: "Pilih template model yang akan ditambahkan:", templateMinimaxName: "🟣 MiniMax-M3", templateMinimaxSub: "Protokol Anthropic", templateDeepseekName: "🔵 DeepSeek V4 Flash", templateDeepseekSub: "Protokol OpenAI", templateOpenaiName: "🟢 GPT-5.6 Luna", templateOpenaiSub: "Protokol resmi OpenAI", templateClaudeName: "🟠 Claude Sonnet 5", templateClaudeSub: "Protokol Anthropic", templateOllamaName: "⚪ Ollama · Gemma 4 12B", templateOllamaSub: "localhost:11434 (tanpa Key)", templateZaiName: "🟡 Z.AI GLM-5.3", templateZaiSub: "Kompatibel dengan OpenAI", templateCustomName: "⚙️ Profil kosong khusus", templateCustomSub: "Endpoint dan model khusus", editingProfile: "Edit: {name}", activeDefault: "● Aktif sebagai default", inactive: "Tidak aktif", setActive: "Jadikan aktif", setActiveTitle: "Gunakan profil ini sebagai default saat ini", duplicate: "Duplikat", duplicateTitle: "Duplikat profil ini", duplicateSuffix: " (salinan)", delete: "Hapus", deleteTitle: "Hapus profil ini", profileNameLabel: "Nama Profil", profileNamePlaceholder: "mis. 🟣 MiniMax-M3 atau DeepSeek kantor", protocolFormatLabel: "Format Protokol API", anthropicOption: "Anthropic Messages API (MiniMax, Claude)", openaiOption: "OpenAI Chat Completions API (OpenAI, DeepSeek, Z.AI, Groq, Ollama, OpenRouter)", endpointLabel: "URL Endpoint API", endpointPlaceholder: "https://api.minimaxi.com/anthropic/v1/messages", apiKeyLabel: "API Key", apiKeyPlaceholder: "Masukkan API Key (mis. eyJhbGciOi... atau sk-...)", toggleKeyTitle: "Tampilkan / sembunyikan API Key", keyNotSet: "Belum diatur", keyEntered: "Key telah dimasukkan", localNoKey: "Lokal, tanpa Key", helpMinimax: "Dapatkan API Key dari MiniMax Open Platform ↗", helpDeepseek: "Dapatkan API Key dari DeepSeek Open Platform ↗", helpOpenai: "Dapatkan API Key dari OpenAI Platform ↗", helpAnthropic: "Dapatkan API Key dari Anthropic Console ↗", helpOllama: "Ollama berjalan secara lokal (tidak perlu Key)", helpZai: "Dapatkan API Key dari Z.AI Open Platform ↗", helpGeneric: "Dapatkan API Key dari penyedia API ↗", modelNameLabel: "Nama Model", modelPlaceholder: "MiniMax-M3", systemPromptLabel: "System Prompt", resetPrompt: "Pulihkan Prompt default", systemPromptPlaceholder: "Masukkan petunjuk cara AI merangkum dan menjawab…", maxTokensLabel: "Token Output Maksimum", temperatureLabel: "Suhu Generasi", testConnection: "Uji Koneksi", saveAll: "Simpan Semua Pengaturan", unnamedProfile: "Profil tanpa nama", unsetModel: "Model belum diatur", protocolAnthropic: "Anthropic", protocolOpenAI: "OpenAI", activePill: "● Aktif", confirmKeepOne: "Setidaknya satu profil API harus dipertahankan; profil terakhir tidak dapat dihapus.", confirmDelete: "Yakin ingin menghapus “{name}”?", confirmResetPrompt: "Pulihkan System Prompt ke template default?", toastActive: "Profil ini sekarang menjadi default!", toastDuplicated: "Profil diduplikasi!", toastDeleted: "Profil dihapus", toastResetPrompt: "Prompt default dipulihkan", toastAdded: "Profil {name} ditambahkan!", testMissingKey: "⚠️ Masukkan API Key untuk “{name}” sebelum menguji koneksi.", testRunningButton: "Menguji koneksi…", testRequesting: "⏳ Mengirim permintaan uji ke [{name}]…", testSuccessHeading: "✅ Koneksi [{name}] berhasil!", testProtocol: "Protokol", testModel: "Respons model", testLatency: "Latensi", testReply: "Balasan uji", testReplyFallback: "OK", testFailedHeading: "❌ Koneksi gagal:", testUnknownError: "Kesalahan tidak dikenal. Periksa endpoint, Key, dan format.", testRequestError: "❌ Kesalahan permintaan: {message}", toastSaved: "🎉 Semua profil API berhasil disimpan!", backgroundMissingKey: "Masukkan API Key terlebih dahulu", backgroundHttpError: "Koneksi gagal (HTTP {status}): {detail}", backgroundConnectionError: "Kesalahan koneksi: {message}"
+      }
+    }
+  });
+
+  const versionLabels = Object.freeze({
+    "zh-TW": "版本",
+    en: "Version",
+    ja: "バージョン",
+    ko: "버전",
+    "zh-CN": "版本",
+    fr: "Version",
+    es: "Versión",
+    de: "Version",
+    vi: "Phiên bản",
+    th: "เวอร์ชัน",
+    id: "Versi"
+  });
+
+  Object.keys(versionLabels).forEach((locale) => {
+    locales[locale].strings.versionLabel = versionLabels[locale];
+  });
+
   const defaultLocale = "zh-TW";
   const supportedLocales = Object.freeze(Object.keys(locales));
   const promptValues = Object.freeze(Object.values(locales).map((locale) => locale.prompt));
@@ -498,9 +660,16 @@ For subsequent multi-turn conversations, combine the original webpage content an
 
     const normalized = String(locale).toLowerCase();
     if (normalized === "zh-tw" || normalized === "zh-hant" || normalized === "zh-hk" || normalized === "zh-mo") return "zh-TW";
+    if (normalized === "zh-cn" || normalized === "zh-hans" || normalized === "zh-sg" || normalized === "zh-my") return "zh-CN";
     if (normalized.startsWith("en")) return "en";
     if (normalized.startsWith("ja")) return "ja";
     if (normalized.startsWith("ko")) return "ko";
+    if (normalized.startsWith("fr")) return "fr";
+    if (normalized.startsWith("es")) return "es";
+    if (normalized.startsWith("de")) return "de";
+    if (normalized.startsWith("vi")) return "vi";
+    if (normalized.startsWith("th")) return "th";
+    if (normalized.startsWith("id") || normalized.startsWith("in")) return "id";
     return defaultLocale;
   }
 

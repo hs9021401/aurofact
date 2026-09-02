@@ -299,27 +299,17 @@ chrome.runtime.onStartup.addListener(() => {
   });
 });
 
-// Handle Context Menu clicks
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (!tab || !tab.id) return;
-
-  const isSelection = info.menuItemId === "summarize_selection";
-  const payload = {
-    action: "TRIGGER_SUMMARY",
-    isSelection: isSelection,
-    selectionText: isSelection ? (info.selectionText || "") : null
-  };
-
+async function sendSummaryToTab(tabId, payload) {
   try {
-    await chrome.tabs.sendMessage(tab.id, payload);
+    await chrome.tabs.sendMessage(tabId, payload);
   } catch (err) {
     try {
       await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
+        target: { tabId },
         files: ["content.js"]
       });
       setTimeout(() => {
-        chrome.tabs.sendMessage(tab.id, payload).catch((e) => {
+        chrome.tabs.sendMessage(tabId, payload).catch((e) => {
           console.error("Failed to send message after injection:", e);
         });
       }, 100);
@@ -327,6 +317,35 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       console.error("Cannot inject content script on this tab:", injectErr);
     }
   }
+}
+
+chrome.commands.onCommand.addListener(async (command, tab) => {
+  if (command !== "summarize-current-page" || !tab?.id) return;
+
+  await sendSummaryToTab(tab.id, {
+    action: "TRIGGER_SUMMARY",
+    isSelection: false,
+    selectionText: null
+  });
+});
+
+// Handle Context Menu clicks
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (!tab || !tab.id) return;
+
+  const isSelection = info.menuItemId === "summarize_selection";
+  await sendSummaryToTab(tab.id, isSelection
+    ? {
+        action: "TRIGGER_SELECTION_ACTIONS",
+        selectionText: info.selectionText || "",
+        title: tab.title || "",
+        url: tab.url || ""
+      }
+    : {
+        action: "TRIGGER_SUMMARY",
+        isSelection: false,
+        selectionText: null
+      });
 });
 
 // Helper: Get active profile and all profiles

@@ -112,6 +112,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSaveAll = document.getElementById("btn-save-all");
   const toast = document.getElementById("toast");
   const languageSelect = document.getElementById("language-select");
+  const appVersion = document.getElementById("app-version");
+
+  if (appVersion) {
+    appVersion.textContent = chrome.runtime.getManifest().version;
+  }
 
   languageSelect.addEventListener("change", () => {
     changeLocale(languageSelect.value);
@@ -442,7 +447,13 @@ document.addEventListener("DOMContentLoaded", () => {
       keyHelpLink.style.display = "inline";
       return;
     }
-    if (url.includes("deepseek")) {
+    // MiniMax's Anthropic-compatible endpoint contains "/anthropic/", so
+    // identify MiniMax before the generic Anthropic URL check.
+    if (url.includes("minimaxi")) {
+      keyHelpLink.textContent = t("helpMinimax");
+      keyHelpLink.href = "https://www.minimaxi.com/";
+      keyHelpLink.style.display = "inline";
+    } else if (url.includes("deepseek")) {
       keyHelpLink.textContent = t("helpDeepseek");
       keyHelpLink.href = "https://platform.deepseek.com";
       keyHelpLink.style.display = "inline";
@@ -461,10 +472,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (url.includes("z.ai")) {
       keyHelpLink.textContent = t("helpZai");
       keyHelpLink.href = "https://z.ai";
-      keyHelpLink.style.display = "inline";
-    } else if (url.includes("minimaxi")) {
-      keyHelpLink.textContent = t("helpMinimax");
-      keyHelpLink.href = "https://platform.minimaxi.com";
       keyHelpLink.style.display = "inline";
     } else {
       keyHelpLink.textContent = t("helpGeneric");

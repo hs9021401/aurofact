@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI 網頁重點總結 (Web Summarizer)",
-  "version": "1.2.3",
+  "version": "1.4.0",
   "description": "支援 MiniMax-M3、DeepSeek V4、GPT-5.6、Claude Sonnet 5、Ollama 與 Z.AI GLM-5.3 的 AI 網頁重點總結擴充套件。",
   "permissions": [
     "contextMenus",
@@ -26,6 +26,14 @@
       "128": "icons/icon128.png"
     }
   },
+  "commands": {
+    "summarize-current-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Summarize the current webpage"
+    }
+  },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true
@@ -39,7 +47,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["i18n.js", "content.js"],
       "run_at": "document_idle"
     }
   ]
