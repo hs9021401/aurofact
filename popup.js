@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } catch (err) {
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          files: ["content.js"]
+          files: ["i18n.js", "youtube-utils.js", "content.js"]
         });
         setTimeout(() => {
           chrome.tabs.sendMessage(tab.id, payload).catch((e) => {

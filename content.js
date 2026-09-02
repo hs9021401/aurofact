@@ -67,6 +67,79 @@
       drag: "드래그하여 이동 (두 번 클릭하면 위치 초기화)", settings: "확장 프로그램 설정", minimize: "최소화/복원", maximize: "최대화", restore: "창 크기 복원", close: "닫기 (Esc)", profile: "AI 모델/프로필 빠른 전환", ready: "준비 완료...", explore: "💡 추가 탐색: ", suggestions: ["🔍 심층 분석", "👶 쉽게 설명", "📋 실행 단계", "⚖️ 장단점 평가"], suggestionQueries: ["이 글의 핵심 주장을 더 깊이 분석하고 관련 배경을 설명하세요.", "이 글의 핵심을 쉬운 예시와 함께 가장 이해하기 쉬운 말로 설명하세요.", "이 글에서 도출할 수 있는 구체적이고 실행 가능한 권장 사항이나 단계는 무엇인가요?", "이 글의 관점에는 어떤 장점, 단점, 한계 또는 논쟁이 있을 수 있나요?"], reset: "위치 초기화", resetTitle: "창을 오른쪽 아래로 초기화", retry: "다시 요약", retryTitle: "페이지 다시 요약", copy: "요약 복사", copyTitle: "전체 대화 복사", export: "내보내기", exportTitle: "전체 대화 내보내기", exportFormat: "내보내기 형식 선택", copied: "복사됨!", copyShort: "복사", exported: "내보냄", answer: "답변 중...", generating: "생성 중", completed: "완료", chars: "자", error: "생성 실패", noKey: "API 키가 설정되지 않음", noKeyMessage: "이 모델의 API 키를 설정하면 시작할 수 있습니다.", requestFailed: "요청 실패", unexpected: "예기치 않은 오류가 발생했습니다. 나중에 다시 시도하세요.", settingsAction: "API 프로필 열기", retryAction: "다시 시도", resize: "드래그하여 크기 조정", pageSummary: "📄 웹페이지 요약", aiAnswer: "🤖 AI 답변" }
   };
   const fl = () => FLOATING_LABELS[currentLocale] || FLOATING_LABELS["zh-TW"];
+  const YOUTUBE_LABELS = Object.freeze({
+    "zh-TW": {
+      missingTitle: "找不到 YouTube 逐字稿",
+      missingMessage: "請先在影片頁面的說明區開啟「顯示逐字稿」，再按「重試」。此 MVP 只會使用頁面上的字幕，不會擷取影片音訊。",
+      retryAction: "重新擷取逐字稿"
+    },
+    en: {
+      missingTitle: "YouTube transcript not found",
+      missingMessage: "Open “Show transcript” in the video description, then try again. This MVP uses captions already shown on the page and does not capture video audio.",
+      retryAction: "Retry transcript extraction"
+    },
+    "zh-CN": {
+      missingTitle: "找不到 YouTube 字幕稿",
+      missingMessage: "请先在视频说明区域打开“显示字幕稿”，再点击“重试”。此 MVP 只使用页面上已有的字幕，不会采集视频音频。",
+      retryAction: "重新提取字幕稿"
+    },
+    fr: {
+      missingTitle: "Transcription YouTube introuvable",
+      missingMessage: "Ouvrez « Afficher la transcription » dans la description de la vidéo, puis réessayez. Ce MVP utilise les sous-titres affichés sur la page et ne capture pas l’audio.",
+      retryAction: "Réessayer l’extraction"
+    },
+    es: {
+      missingTitle: "No se encontró la transcripción de YouTube",
+      missingMessage: "Abre «Mostrar transcripción» en la descripción del vídeo y vuelve a intentarlo. Este MVP usa los subtítulos mostrados en la página y no captura el audio.",
+      retryAction: "Reintentar extracción"
+    },
+    de: {
+      missingTitle: "YouTube-Transkript nicht gefunden",
+      missingMessage: "Öffne „Transkript anzeigen“ in der Videobeschreibung und versuche es erneut. Dieses MVP verwendet die auf der Seite angezeigten Untertitel und nimmt kein Audio auf.",
+      retryAction: "Transkript erneut auslesen"
+    },
+    vi: {
+      missingTitle: "Không tìm thấy bản chép lời YouTube",
+      missingMessage: "Hãy mở “Hiện bản chép lời” trong phần mô tả video rồi thử lại. MVP này chỉ dùng phụ đề đang hiển thị trên trang và không thu âm thanh video.",
+      retryAction: "Thử trích xuất lại"
+    },
+    th: {
+      missingTitle: "ไม่พบบทถอดเสียง YouTube",
+      missingMessage: "เปิด “แสดงข้อความถอดเสียง” ในคำอธิบายวิดีโอ แล้วลองอีกครั้ง MVP นี้ใช้เฉพาะคำบรรยายที่แสดงอยู่บนหน้าและไม่บันทึกเสียงวิดีโอ",
+      retryAction: "ลองดึงบทถอดเสียงอีกครั้ง"
+    },
+    id: {
+      missingTitle: "Transkrip YouTube tidak ditemukan",
+      missingMessage: "Buka “Tampilkan transkrip” di deskripsi video, lalu coba lagi. MVP ini hanya menggunakan teks yang sudah tampil di halaman dan tidak merekam audio video.",
+      retryAction: "Coba ekstrak transkrip lagi"
+    },
+    ja: {
+      missingTitle: "YouTube の文字起こしが見つかりません",
+      missingMessage: "動画の説明欄で「文字起こしを表示」を開いてから、もう一度お試しください。この MVP はページに表示された字幕のみを使用し、動画音声は取得しません。",
+      retryAction: "文字起こしを再取得"
+    },
+    ko: {
+      missingTitle: "YouTube 스크립트를 찾을 수 없습니다",
+      missingMessage: "동영상 설명에서 ‘스크립트 표시’를 연 다음 다시 시도하세요. 이 MVP는 페이지에 표시된 자막만 사용하며 동영상 오디오는 캡처하지 않습니다.",
+      retryAction: "스크립트 다시 추출"
+    }
+  });
+  const ytl = () => YOUTUBE_LABELS[currentLocale] || YOUTUBE_LABELS["zh-TW"];
+
+  const YOUTUBE_PROMPT_LABELS = Object.freeze({
+    "zh-TW": { summary: "請根據以下 YouTube 影片逐字稿整理影片的核心重點：", transcript: "【YouTube 影片逐字稿】" },
+    en: { summary: "Summarize the key points of the following YouTube video transcript:", transcript: "[YouTube video transcript]" },
+    "zh-CN": { summary: "请根据以下 YouTube 视频字幕稿整理视频的核心要点：", transcript: "[YouTube 视频字幕稿]" },
+    fr: { summary: "Résumez les points essentiels de la transcription vidéo YouTube suivante :", transcript: "[Transcription vidéo YouTube]" },
+    es: { summary: "Resume los puntos clave de la siguiente transcripción del vídeo de YouTube:", transcript: "[Transcripción del vídeo de YouTube]" },
+    de: { summary: "Fasse die wichtigsten Punkte des folgenden YouTube-Video-Transkripts zusammen:", transcript: "[Transkript des YouTube-Videos]" },
+    vi: { summary: "Hãy tóm tắt các ý chính của bản chép lời video YouTube sau:", transcript: "[Bản chép lời video YouTube]" },
+    th: { summary: "สรุปประเด็นสำคัญจากบทถอดเสียงวิดีโอ YouTube ต่อไปนี้:", transcript: "[บทถอดเสียงวิดีโอ YouTube]" },
+    id: { summary: "Ringkas poin-poin utama dari transkrip video YouTube berikut:", transcript: "[Transkrip video YouTube]" },
+    ja: { summary: "次の YouTube 動画の文字起こしから要点を要約してください：", transcript: "【YouTube 動画の文字起こし】" },
+    ko: { summary: "다음 YouTube 동영상 스크립트의 핵심 내용을 요약하세요:", transcript: "[YouTube 동영상 스크립트]" }
+  });
+  const ytpl = () => YOUTUBE_PROMPT_LABELS[currentLocale] || YOUTUBE_PROMPT_LABELS["zh-TW"];
   let floatingStatus = { kind: "ready", count: 0, profile: "" };
   function getFloatingStatusText() {
     const l = fl();
@@ -159,6 +232,23 @@
 
     const title = document.title || "";
     const url = window.location.href;
+
+    const youtubeHelper = globalThis.AurofactYouTube;
+    if (youtubeHelper?.isYouTubeVideoUrl(url)) {
+      const transcript = youtubeHelper.extractTranscript(document);
+      const youtubeTitle = title.replace(/\s*[-|]\s*YouTube\s*$/i, "").trim() || title;
+
+      return {
+        title: youtubeTitle,
+        url,
+        text: transcript.text,
+        isSelection: false,
+        isYouTube: true,
+        sourceType: "youtube-transcript",
+        transcriptSegmentCount: transcript.segmentCount,
+        errorCode: transcript.text ? "" : "YOUTUBE_TRANSCRIPT_NOT_FOUND"
+      };
+    }
 
     const selectors = [
       "article", "main", "[role='main']", ".post-content",
@@ -1792,6 +1882,19 @@
     titleEl.textContent = extraction.isSelection ? ft().selectedSummary : ft().title;
 
     clampPositionToBounds();
+
+    if (extraction.errorCode) {
+      stopCurrentGeneration();
+      shadowRoot.getElementById("ws-loading-state").style.display = "none";
+      shadowRoot.getElementById("ws-chat-feed").style.display = "none";
+      shadowRoot.getElementById("ws-chat-feed").innerHTML = "";
+      shadowRoot.getElementById("ws-error-box").style.display = "none";
+      shadowRoot.getElementById("ws-suggestions-bar").style.display = "none";
+      updateInputState(false);
+      showErrorState(extraction.errorCode);
+      return;
+    }
+
     startInitialSummary(extraction);
   }
 
@@ -1803,7 +1906,7 @@
     const labels = pl();
     const promptContent = extraction.isSelection
       ? `${labels.selectionSummary}【${extraction.title || "Untitled webpage"}】:\n\n${labels.selectedContent}\n${extraction.text}`
-      : `${labels.pageSummary}\n\n${labels.pageTitle}${extraction.title || "Untitled webpage"}\n${labels.pageUrl}${extraction.url || "N/A"}\n\n${labels.pageBody}\n${extraction.text}`;
+      : `${extraction.isYouTube ? ytpl().summary : labels.pageSummary}\n\n${labels.pageTitle}${extraction.title || "Untitled webpage"}\n${labels.pageUrl}${extraction.url || "N/A"}\n\n${extraction.isYouTube ? ytpl().transcript : labels.pageBody}\n${extraction.text}`;
 
     conversationHistory.push({ role: "user", content: promptContent });
 
@@ -2063,7 +2166,18 @@
     errorBox.style.display = "block";
     setFloatingStatus("error");
 
-    if (code === "NO_API_KEY") {
+    if (code === "YOUTUBE_TRANSCRIPT_NOT_FOUND") {
+      errorTitle.textContent = ytl().missingTitle;
+      errorMsg.textContent = message || ytl().missingMessage;
+      errorActions.innerHTML = `
+        <button class="ws-btn-error-action" id="ws-btn-youtube-retry">
+          ${ytl().retryAction}
+        </button>
+      `;
+      shadowRoot.getElementById("ws-btn-youtube-retry").addEventListener("click", () => {
+        initiateSummary(false, null);
+      });
+    } else if (code === "NO_API_KEY") {
       errorTitle.textContent = fl().noKey;
       errorMsg.textContent = message || fl().noKeyMessage;
       errorActions.innerHTML = `

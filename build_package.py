@@ -21,6 +21,7 @@ def build_package():
         "manifest.json",
         "background.js",
         "content.js",
+        "youtube-utils.js",
         "options.html",
         "options.css",
         "options.js",

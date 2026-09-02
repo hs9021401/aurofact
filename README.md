@@ -25,6 +25,7 @@
 ### ✨ 核心功能特色
 
 - 🚀 **右鍵一鍵總結**：在任何網頁點擊右鍵選單，選擇「📝 總結此網頁重點」即可開始摘要。
+- ▶️ **YouTube 轉錄稿摘要 MVP**：在 YouTube 影片頁面先開啟「顯示轉錄稿 (Show transcript)」後，即可直接摘要目前載入的完整轉錄稿；保留時間戳記，沒有可用轉錄稿時會顯示操作提示。
 - 🔍 **AI 選取文字工具**：選取網頁中特定段落後按右鍵選擇「AI 處理選取文字」，可進一步總結、翻譯、解釋、改寫、修正文法或輸入自訂指令。
 - 📤 **摘要匯出**：可將完整摘要與延伸對話下載為 Markdown（`.md`）或純文字（`.txt`）。
 - ⌨️ **快捷鍵摘要**：使用 `Alt + Shift + S` 快速摘要目前頁面，也可在瀏覽器的擴充功能快捷鍵設定中自訂。
@@ -124,6 +125,7 @@
 - **方法 B：AI 處理選取文字** ➜ 反白選取文字後按右鍵 ➜ 點選 **「📝 AI 處理選取文字」** ➜ 在浮窗中選擇操作。
 - **方法 C：工具列快捷總結** ➜ 點擊瀏覽器工具列外掛圖示 ➜ 點選 **「⚡ 立即總結當前網頁」**。
 - **方法 D：鍵盤快捷總結** ➜ 按下 `Alt + Shift + S` 摘要目前頁面。
+- **方法 E：YouTube 影片摘要** ➜ 在影片頁面開啟 **「顯示轉錄稿 (Show transcript)」** ➜ 使用右鍵選單、工具列 Popup 或快捷鍵開始摘要。
 - **匯出結果** ➜ 在浮窗底部選擇 `MD` 或 `TXT`，再點選 **「匯出」**。
 
 ---
@@ -137,6 +139,7 @@
 ### ✨ Key Features
 
 - 🚀 **Right-Click Instant Summary**: Right-click anywhere on a webpage and click **"📝 Summarize Page"** to get structured key points immediately.
+- ▶️ **YouTube Transcript Summary (MVP)**: Open **"Show transcript"** on a YouTube video page before starting a summary. AUROFACT reads the loaded transcript, preserves timestamps, and shows a clear prompt when no transcript is available.
 - 🔍 **AI Selection Tools**: Highlight text, select **"📝 Process selected text with AI"**, then choose summarize, translate, explain, rewrite, grammar correction, or a custom instruction.
 - 📤 **Export Summaries**: Download the complete summary and follow-up conversation as Markdown (`.md`) or plain text (`.txt`).
 - ⌨️ **Keyboard Shortcut**: Press `Alt + Shift + S` to summarize the current page; the shortcut can be customized in the browser's extension shortcut settings.
@@ -235,6 +238,7 @@ The options page lets you manage multiple profiles with separate providers, API 
 - **Method B: Process Selected Text** ➜ Highlight any text ➜ Right-click ➜ Click **"📝 Process selected text with AI"** ➜ Choose an operation in the floating panel.
 - **Method C: Toolbar Action** ➜ Click the extension icon in the toolbar ➜ Click **"⚡ Summarize Current Tab"**.
 - **Method D: Keyboard Shortcut** ➜ Press `Alt + Shift + S` to summarize the current page.
+- **Method E: YouTube Video Summary** ➜ Open **"Show transcript"** on the video page ➜ start the summary from the context menu, toolbar popup, or keyboard shortcut.
 - **Export Results** ➜ Select `MD` or `TXT` in the floating panel footer, then click **"Export"**.
 
 ---
@@ -245,7 +249,7 @@ To rebuild the standalone `.zip` distribution package:
 ```powershell
 python build_package.py
 ```
-Output will be generated in `dist/aurofact-v1.4.1.zip`.
+Output will be generated in `dist/aurofact-v1.5.0.zip`.
 
 ---
 

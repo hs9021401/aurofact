@@ -306,7 +306,7 @@ async function sendSummaryToTab(tabId, payload) {
     try {
       await chrome.scripting.executeScript({
         target: { tabId },
-        files: ["content.js"]
+        files: ["i18n.js", "youtube-utils.js", "content.js"]
       });
       setTimeout(() => {
         chrome.tabs.sendMessage(tabId, payload).catch((e) => {
