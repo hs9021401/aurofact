@@ -475,6 +475,13 @@ body {
   line-height: 1.55;
 }
 
+.endpoint-warning {
+  margin-top: 6px;
+  color: #b91c1c;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .input-with-action input {
   padding-right: 38px;
 }

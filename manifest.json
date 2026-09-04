@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AUROFACT｜AI Web Summarizer & Insight Assistant",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "AUROFACT is an AI browser assistant for summarizing webpages, analyzing selected text, and turning content into actionable insights with multiple LLM providers.",
   "permissions": [
     "contextMenus",
@@ -11,7 +11,14 @@
   ],
   "host_permissions": [
     "https://api.minimaxi.com/*",
-    "<all_urls>"
+    "https://api.deepseek.com/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "https://api.z.ai/*"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -43,12 +50,5 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["i18n.js", "youtube-utils.js", "content.js"],
-      "run_at": "document_idle"
-    }
-  ]
+  }
 }

@@ -37,24 +37,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function loadProfiles() {
     // Load all profiles
-    chrome.runtime.sendMessage({ action: "GET_PROFILES" }, (response) => {
-      if (response && response.success) {
-        loadedProfiles = response.profiles || [];
-        const activeId = response.activeProfileId;
-
-        profileSelect.innerHTML = "";
-        loadedProfiles.forEach((p) => {
-          const opt = document.createElement("option");
-          opt.value = p.id;
-          opt.textContent = `${p.name} (${p.model})`;
-          if (p.id === activeId) {
-            opt.selected = true;
-          }
-          profileSelect.appendChild(opt);
-        });
-
-        updateStatusUI(response.activeProfile);
+    chrome.runtime.sendMessage({ action: "GET_PUBLIC_PROFILES" }, (response) => {
+      if (chrome.runtime.lastError || !response?.success) {
+        statusDot.className = "status-indicator unconfigured";
+        statusText.textContent = t("profileLoadFailed");
+        statusSub.textContent = "";
+        return;
       }
+
+      loadedProfiles = response.profiles || [];
+      const activeId = response.activeProfileId;
+
+      profileSelect.textContent = "";
+      loadedProfiles.forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = `${p.name} (${p.model})`;
+        if (p.id === activeId) {
+          opt.selected = true;
+        }
+        profileSelect.appendChild(opt);
+      });
+
+      updateStatusUI(response.activeProfile);
     });
   }
 
@@ -69,8 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function updateStatusUI(profile) {
     if (!profile) return;
-    const isOllama = profile.apiUrl && profile.apiUrl.includes("localhost");
-    const hasKey = (profile.apiKey && profile.apiKey.trim().length > 0) || isOllama;
+    const isOllama = Boolean(profile.isLocal);
+    const hasKey = Boolean(profile.hasKey) || isOllama;
 
     if (hasKey) {
       statusDot.className = "status-indicator ready";
@@ -85,6 +90,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Read the same locale selected on the options page before rendering any Popup content.
   chrome.storage.sync.get(["uiLocale"], (items) => {
+    if (chrome.runtime.lastError) {
+      currentLocale = I18N.defaultLocale;
+      applyTranslations();
+      statusText.textContent = t("profileLoadFailed");
+      statusSub.textContent = "";
+      return;
+    }
+
     currentLocale = I18N.normalizeLocale(items?.uiLocale);
     applyTranslations();
     loadProfiles();
@@ -113,7 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } catch (err) {
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          files: ["i18n.js", "youtube-utils.js", "content.js"]
+          files: ["i18n.js", "youtube-utils.js", "prompt-safety.js", "input-behavior.js", "content.js"]
         });
         setTimeout(() => {
           chrome.tabs.sendMessage(tab.id, payload).catch((e) => {

@@ -88,7 +88,7 @@ async function runPopup(locale) {
       },
       runtime: {
         sendMessage(request, callback) {
-          if (request.action === "GET_PROFILES") {
+          if (request.action === "GET_PUBLIC_PROFILES") {
             callback({
               success: true,
               activeProfileId: "profile-1",
@@ -96,15 +96,17 @@ async function runPopup(locale) {
                 id: "profile-1",
                 name: "Office Profile",
                 model: "example-model",
-                apiUrl: "https://api.example.com",
-                apiKey: "test-key"
+                apiFormat: "openai",
+                hasKey: true,
+                isLocal: false
               },
               profiles: [{
                 id: "profile-1",
                 name: "Office Profile",
                 model: "example-model",
-                apiUrl: "https://api.example.com",
-                apiKey: "test-key"
+                apiFormat: "openai",
+                hasKey: true,
+                isLocal: false
               }]
             });
           }

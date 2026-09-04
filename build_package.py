@@ -20,6 +20,10 @@ def build_package():
     files_to_include = [
         "manifest.json",
         "background.js",
+        "profile-view.js",
+        "profile-schema.js",
+        "prompt-safety.js",
+        "input-behavior.js",
         "content.js",
         "youtube-utils.js",
         "options.html",

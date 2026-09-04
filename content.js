@@ -1,6 +1,9 @@
 // content.js - AUROFACT content script with multi-turn Q&A, profile switching, and safe viewport dragging
 
 (function () {
+  const PROMPT_SAFETY = globalThis.AurofactPromptSafety;
+  const INPUT_BEHAVIOR = globalThis.AurofactInputBehavior;
+  if (!PROMPT_SAFETY || !INPUT_BEHAVIOR) return;
   if (window.__webSummarizerInjected) return;
   window.__webSummarizerInjected = true;
 
@@ -35,17 +38,17 @@
   const AUTO_SCROLL_THRESHOLD = 32;
 
   const FLOATING_TEXT = {
-    "zh-TW": { title: "AI 總結", selected: "選取文字", selectedSummary: "選取摘要", loading: "正在分析網頁內容並調用 AI 進行總結...", connecting: "連接 AI 模型中...", input: "針對此文章進一步提問... (Enter 發送, Shift+Enter 換行)", selection: "先選擇上方操作，或點選「自訂」輸入指令...", custom: "輸入要對選取文字執行的操作... (Enter 發送)", selectedPrefix: "已選取：", send: "發送提問", stop: "停止生成", actions: ["總結", "翻譯", "解釋", "改寫", "修正文法", "自訂"] },
-    en: { title: "AI Summary", selected: "Selected Text", selectedSummary: "Selection Summary", loading: "Analyzing the webpage and asking the AI for a summary...", connecting: "Connecting to AI model...", input: "Ask a follow-up question... (Enter to send, Shift+Enter for a new line)", selection: "Choose an action above, or click Custom to enter an instruction...", custom: "Enter an operation for the selected text... (Enter to send)", selectedPrefix: "Selected: ", send: "Send question", stop: "Stop generation", actions: ["Summarize", "Translate", "Explain", "Rewrite", "Fix grammar", "Custom"] },
-    "zh-CN": { title: "AI 总结", selected: "选中文字", selectedSummary: "选中文字总结", loading: "正在分析网页内容并调用 AI 进行总结...", connecting: "正在连接 AI 模型...", input: "针对本文继续提问...（Enter 发送，Shift+Enter 换行）", selection: "请先选择上方操作，或点击“自定义”输入指令...", custom: "输入要对选中文字执行的操作...（Enter 发送）", selectedPrefix: "已选择：", send: "发送提问", stop: "停止生成", actions: ["总结", "翻译", "解释", "改写", "修正语法", "自定义"] },
-    fr: { title: "Résumé IA", selected: "Texte sélectionné", selectedSummary: "Résumé de la sélection", loading: "Analyse de la page et préparation du résumé par l’IA...", connecting: "Connexion au modèle IA...", input: "Posez une question complémentaire... (Entrée pour envoyer, Maj+Entrée pour un saut de ligne)", selection: "Choisissez une action ci-dessus ou cliquez sur Personnalisé pour saisir une instruction...", custom: "Saisissez une opération pour le texte sélectionné... (Entrée pour envoyer)", selectedPrefix: "Sélection : ", send: "Envoyer la question", stop: "Arrêter la génération", actions: ["Résumer", "Traduire", "Expliquer", "Réécrire", "Corriger la grammaire", "Personnalisé"] },
-    es: { title: "Resumen de IA", selected: "Texto seleccionado", selectedSummary: "Resumen de la selección", loading: "Analizando la página y solicitando el resumen a la IA...", connecting: "Conectando con el modelo de IA...", input: "Haz una pregunta de seguimiento... (Enter para enviar, Shift+Enter para nueva línea)", selection: "Elige una acción arriba o pulsa Personalizado para introducir una instrucción...", custom: "Introduce una operación para el texto seleccionado... (Enter para enviar)", selectedPrefix: "Seleccionado: ", send: "Enviar pregunta", stop: "Detener generación", actions: ["Resumir", "Traducir", "Explicar", "Reescribir", "Corregir gramática", "Personalizado"] },
-    de: { title: "KI-Zusammenfassung", selected: "Ausgewählter Text", selectedSummary: "Zusammenfassung der Auswahl", loading: "Webseite wird analysiert und von der KI zusammengefasst...", connecting: "Verbindung zum KI-Modell wird hergestellt...", input: "Stelle eine Folgefrage... (Enter zum Senden, Umschalt+Enter für neue Zeile)", selection: "Wähle oben eine Aktion oder klicke auf Benutzerdefiniert, um eine Anweisung einzugeben...", custom: "Gib eine Aktion für den ausgewählten Text ein... (Enter zum Senden)", selectedPrefix: "Ausgewählt: ", send: "Frage senden", stop: "Generierung stoppen", actions: ["Zusammenfassen", "Übersetzen", "Erklären", "Umschreiben", "Grammatik korrigieren", "Benutzerdefiniert"] },
-    vi: { title: "Tóm tắt AI", selected: "Văn bản đã chọn", selectedSummary: "Tóm tắt văn bản đã chọn", loading: "Đang phân tích trang web và yêu cầu AI tóm tắt...", connecting: "Đang kết nối mô hình AI...", input: "Đặt câu hỏi tiếp theo... (Enter để gửi, Shift+Enter để xuống dòng)", selection: "Chọn một thao tác ở trên hoặc nhấn Tùy chỉnh để nhập chỉ dẫn...", custom: "Nhập thao tác cho văn bản đã chọn... (Enter để gửi)", selectedPrefix: "Đã chọn: ", send: "Gửi câu hỏi", stop: "Dừng tạo", actions: ["Tóm tắt", "Dịch", "Giải thích", "Viết lại", "Sửa ngữ pháp", "Tùy chỉnh"] },
-    th: { title: "สรุปโดย AI", selected: "ข้อความที่เลือก", selectedSummary: "สรุปข้อความที่เลือก", loading: "กำลังวิเคราะห์หน้าเว็บและขอให้ AI สรุป...", connecting: "กำลังเชื่อมต่อโมเดล AI...", input: "ถามคำถามต่อเนื่อง... (กด Enter เพื่อส่ง, Shift+Enter เพื่อขึ้นบรรทัดใหม่)", selection: "เลือกการดำเนินการด้านบน หรือคลิกกำหนดเองเพื่อป้อนคำสั่ง...", custom: "ป้อนการดำเนินการสำหรับข้อความที่เลือก... (กด Enter เพื่อส่ง)", selectedPrefix: "เลือกแล้ว: ", send: "ส่งคำถาม", stop: "หยุดการสร้าง", actions: ["สรุป", "แปล", "อธิบาย", "เขียนใหม่", "แก้ไวยากรณ์", "กำหนดเอง"] },
-    id: { title: "Ringkasan AI", selected: "Teks yang Dipilih", selectedSummary: "Ringkasan Teks yang Dipilih", loading: "Menganalisis halaman web dan meminta AI membuat ringkasan...", connecting: "Menghubungkan ke model AI...", input: "Ajukan pertanyaan lanjutan... (Enter untuk mengirim, Shift+Enter untuk baris baru)", selection: "Pilih tindakan di atas atau klik Kustom untuk memasukkan instruksi...", custom: "Masukkan operasi untuk teks yang dipilih... (Enter untuk mengirim)", selectedPrefix: "Dipilih: ", send: "Kirim pertanyaan", stop: "Hentikan pembuatan", actions: ["Ringkas", "Terjemahkan", "Jelaskan", "Tulis ulang", "Perbaiki tata bahasa", "Kustom"] },
-    ja: { title: "AI要約", selected: "選択テキスト", selectedSummary: "選択テキストの要約", loading: "ウェブページを分析し、AIに要約を依頼しています...", connecting: "AIモデルに接続中...", input: "追加の質問を入力...（Enterで送信、Shift+Enterで改行）", selection: "上の操作を選択するか、「カスタム」で指示を入力してください...", custom: "選択テキストへの操作を入力...（Enterで送信）", selectedPrefix: "選択済み：", send: "質問を送信", stop: "生成を停止", actions: ["要約", "翻訳", "説明", "書き換え", "文法修正", "カスタム"] },
-    ko: { title: "AI 요약", selected: "선택한 텍스트", selectedSummary: "선택 텍스트 요약", loading: "웹페이지를 분석하고 AI에 요약을 요청하는 중...", connecting: "AI 모델에 연결하는 중...", input: "추가 질문 입력... (Enter 전송, Shift+Enter 줄바꿈)", selection: "위 작업을 선택하거나 ‘사용자 지정’을 눌러 지시를 입력하세요...", custom: "선택한 텍스트에 수행할 작업 입력... (Enter 전송)", selectedPrefix: "선택됨: ", send: "질문 보내기", stop: "생성 중지", actions: ["요약", "번역", "설명", "다시 쓰기", "문법 수정", "사용자 지정"] }
+    "zh-TW": { title: "AI 總結", selected: "選取文字", selectedSummary: "選取摘要", loading: "正在分析網頁內容並調用 AI 進行總結...", connecting: "連接 AI 模型中...", input: "針對此文章進一步提問... (Enter 換行, Ctrl+Enter 發送)", selection: "先選擇上方操作，或點選「自訂」輸入指令...", custom: "輸入要對選取文字執行的操作... (Enter 換行, Ctrl+Enter 發送)", selectedPrefix: "已選取：", send: "發送提問", stop: "停止生成", actions: ["總結", "翻譯", "解釋", "改寫", "修正文法", "自訂"] },
+    en: { title: "AI Summary", selected: "Selected Text", selectedSummary: "Selection Summary", loading: "Analyzing the webpage and asking the AI for a summary...", connecting: "Connecting to AI model...", input: "Ask a follow-up question... (Enter for a new line, Ctrl+Enter to send)", selection: "Choose an action above, or click Custom to enter an instruction...", custom: "Enter an operation for the selected text... (Enter for a new line, Ctrl+Enter to send)", selectedPrefix: "Selected: ", send: "Send question", stop: "Stop generation", actions: ["Summarize", "Translate", "Explain", "Rewrite", "Fix grammar", "Custom"] },
+    "zh-CN": { title: "AI 总结", selected: "选中文字", selectedSummary: "选中文字总结", loading: "正在分析网页内容并调用 AI 进行总结...", connecting: "正在连接 AI 模型...", input: "针对本文继续提问...（Enter 换行，Ctrl+Enter 发送）", selection: "请先选择上方操作，或点击“自定义”输入指令...", custom: "输入要对选中文字执行的操作...（Enter 换行，Ctrl+Enter 发送）", selectedPrefix: "已选择：", send: "发送提问", stop: "停止生成", actions: ["总结", "翻译", "解释", "改写", "修正语法", "自定义"] },
+    fr: { title: "Résumé IA", selected: "Texte sélectionné", selectedSummary: "Résumé de la sélection", loading: "Analyse de la page et préparation du résumé par l’IA...", connecting: "Connexion au modèle IA...", input: "Posez une question complémentaire... (Entrée pour un saut de ligne, Ctrl+Entrée pour envoyer)", selection: "Choisissez une action ci-dessus ou cliquez sur Personnalisé pour saisir une instruction...", custom: "Saisissez une opération pour le texte sélectionné... (Entrée pour un saut de ligne, Ctrl+Entrée pour envoyer)", selectedPrefix: "Sélection : ", send: "Envoyer la question", stop: "Arrêter la génération", actions: ["Résumer", "Traduire", "Expliquer", "Réécrire", "Corriger la grammaire", "Personnalisé"] },
+    es: { title: "Resumen de IA", selected: "Texto seleccionado", selectedSummary: "Resumen de la selección", loading: "Analizando la página y solicitando el resumen a la IA...", connecting: "Conectando con el modelo de IA...", input: "Haz una pregunta de seguimiento... (Enter para nueva línea, Ctrl+Enter para enviar)", selection: "Elige una acción arriba o pulsa Personalizado para introducir una instrucción...", custom: "Introduce una operación para el texto seleccionado... (Enter para nueva línea, Ctrl+Enter para enviar)", selectedPrefix: "Seleccionado: ", send: "Enviar pregunta", stop: "Detener generación", actions: ["Resumir", "Traducir", "Explicar", "Reescribir", "Corregir gramática", "Personalizado"] },
+    de: { title: "KI-Zusammenfassung", selected: "Ausgewählter Text", selectedSummary: "Zusammenfassung der Auswahl", loading: "Webseite wird analysiert und von der KI zusammengefasst...", connecting: "Verbindung zum KI-Modell wird hergestellt...", input: "Stelle eine Folgefrage... (Enter für eine neue Zeile, Strg+Enter zum Senden)", selection: "Wähle oben eine Aktion oder klicke auf Benutzerdefiniert, um eine Anweisung einzugeben...", custom: "Gib eine Aktion für den ausgewählten Text ein... (Enter für eine neue Zeile, Strg+Enter zum Senden)", selectedPrefix: "Ausgewählt: ", send: "Frage senden", stop: "Generierung stoppen", actions: ["Zusammenfassen", "Übersetzen", "Erklären", "Umschreiben", "Grammatik korrigieren", "Benutzerdefiniert"] },
+    vi: { title: "Tóm tắt AI", selected: "Văn bản đã chọn", selectedSummary: "Tóm tắt văn bản đã chọn", loading: "Đang phân tích trang web và yêu cầu AI tóm tắt...", connecting: "Đang kết nối mô hình AI...", input: "Đặt câu hỏi tiếp theo... (Enter để xuống dòng, Ctrl+Enter để gửi)", selection: "Chọn một thao tác ở trên hoặc nhấn Tùy chỉnh để nhập chỉ dẫn...", custom: "Nhập thao tác cho văn bản đã chọn... (Enter để xuống dòng, Ctrl+Enter để gửi)", selectedPrefix: "Đã chọn: ", send: "Gửi câu hỏi", stop: "Dừng tạo", actions: ["Tóm tắt", "Dịch", "Giải thích", "Viết lại", "Sửa ngữ pháp", "Tùy chỉnh"] },
+    th: { title: "สรุปโดย AI", selected: "ข้อความที่เลือก", selectedSummary: "สรุปข้อความที่เลือก", loading: "กำลังวิเคราะห์หน้าเว็บและขอให้ AI สรุป...", connecting: "กำลังเชื่อมต่อโมเดล AI...", input: "ถามคำถามต่อเนื่อง... (กด Enter เพื่อขึ้นบรรทัดใหม่, Ctrl+Enter เพื่อส่ง)", selection: "เลือกการดำเนินการด้านบน หรือคลิกกำหนดเองเพื่อป้อนคำสั่ง...", custom: "ป้อนการดำเนินการสำหรับข้อความที่เลือก... (กด Enter เพื่อขึ้นบรรทัดใหม่, Ctrl+Enter เพื่อส่ง)", selectedPrefix: "เลือกแล้ว: ", send: "ส่งคำถาม", stop: "หยุดการสร้าง", actions: ["สรุป", "แปล", "อธิบาย", "เขียนใหม่", "แก้ไวยากรณ์", "กำหนดเอง"] },
+    id: { title: "Ringkasan AI", selected: "Teks yang Dipilih", selectedSummary: "Ringkasan Teks yang Dipilih", loading: "Menganalisis halaman web dan meminta AI membuat ringkasan...", connecting: "Menghubungkan ke model AI...", input: "Ajukan pertanyaan lanjutan... (Enter untuk baris baru, Ctrl+Enter untuk mengirim)", selection: "Pilih tindakan di atas atau klik Kustom untuk memasukkan instruksi...", custom: "Masukkan operasi untuk teks yang dipilih... (Enter untuk baris baru, Ctrl+Enter untuk mengirim)", selectedPrefix: "Dipilih: ", send: "Kirim pertanyaan", stop: "Hentikan pembuatan", actions: ["Ringkas", "Terjemahkan", "Jelaskan", "Tulis ulang", "Perbaiki tata bahasa", "Kustom"] },
+    ja: { title: "AI要約", selected: "選択テキスト", selectedSummary: "選択テキストの要約", loading: "ウェブページを分析し、AIに要約を依頼しています...", connecting: "AIモデルに接続中...", input: "追加の質問を入力...（Enterで改行、Ctrl+Enterで送信）", selection: "上の操作を選択するか、「カスタム」で指示を入力してください...", custom: "選択テキストへの操作を入力...（Enterで改行、Ctrl+Enterで送信）", selectedPrefix: "選択済み：", send: "質問を送信", stop: "生成を停止", actions: ["要約", "翻訳", "説明", "書き換え", "文法修正", "カスタム"] },
+    ko: { title: "AI 요약", selected: "선택한 텍스트", selectedSummary: "선택 텍스트 요약", loading: "웹페이지를 분석하고 AI에 요약을 요청하는 중...", connecting: "AI 모델에 연결하는 중...", input: "추가 질문 입력... (Enter 줄바꿈, Ctrl+Enter 전송)", selection: "위 작업을 선택하거나 ‘사용자 지정’을 눌러 지시를 입력하세요...", custom: "선택한 텍스트에 수행할 작업 입력... (Enter 줄바꿈, Ctrl+Enter 전송)", selectedPrefix: "선택됨: ", send: "질문 보내기", stop: "생성 중지", actions: ["요약", "번역", "설명", "다시 쓰기", "문법 수정", "사용자 지정"] }
   };
   Object.values(FLOATING_TEXT).forEach((localeText) => { localeText.title = "AUROFACT"; });
   const ft = () => FLOATING_TEXT[currentLocale] || FLOATING_TEXT["zh-TW"];
@@ -190,6 +193,11 @@
     shadowRoot.querySelectorAll(".ws-chip").forEach((chip, index) => { chip.textContent = l.suggestions[index]; chip.setAttribute("data-query", l.suggestionQueries[index]); });
     const setText = (id, value) => { const el = shadowRoot.getElementById(id); if (el) el.textContent = value; };
     setText("ws-stats-text", getFloatingStatusText());
+    setText(
+      "ws-security-notice",
+      globalThis.WebSummarizerI18n?.translate(currentLocale, "promptInjectionNotice") ||
+        "⚠️ Webpage content is sent to the selected LLM. Instructions inside it are treated as untrusted data; do not place secrets in webpage text."
+    );
     setText("ws-reset-btn-text", l.reset);
     setText("ws-retry-btn-text", l.retry);
     setText("ws-copy-btn-text", l.copy);
@@ -197,6 +205,11 @@
   }
   function loadFloatingLocale() {
     chrome.storage.sync.get(["uiLocale"], (items) => {
+      if (chrome.runtime.lastError) {
+        currentLocale = "zh-TW";
+        refreshFloatingLocale();
+        return;
+      }
       currentLocale = globalThis.WebSummarizerI18n?.normalizeLocale(items.uiLocale) || "zh-TW";
       refreshFloatingLocale();
     });
@@ -210,6 +223,7 @@
 
   // Listen for trigger messages from background
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (!request || typeof request.action !== "string") return false;
     if (request.action === "TRIGGER_SUMMARY") {
       initiateSummary(request.isSelection, request.selectionText);
       sendResponse({ status: "started" });
@@ -306,7 +320,7 @@
       hostElement.id = "web-summarizer-host";
       document.documentElement.appendChild(hostElement);
 
-      shadowRoot = hostElement.attachShadow({ mode: "open" });
+      shadowRoot = hostElement.attachShadow({ mode: "closed" });
       buildUIStructure();
       attachUIEvents();
       setInitialPosition();
@@ -328,14 +342,14 @@
 
   // Fetch profiles from background to populate the header selector
   function loadProfilesIntoHeader() {
-    chrome.runtime.sendMessage({ action: "GET_PROFILES" }, (res) => {
+    chrome.runtime.sendMessage({ action: "GET_PUBLIC_PROFILES" }, (res) => {
       if (res && res.success) {
         availableProfiles = res.profiles || [];
         currentActiveProfileId = res.activeProfileId || availableProfiles[0]?.id || "";
         
         const selector = shadowRoot.getElementById("ws-profile-selector");
         if (selector) {
-          selector.innerHTML = "";
+          selector.replaceChildren();
           availableProfiles.forEach((p) => {
             const opt = document.createElement("option");
             opt.value = p.id;
@@ -493,6 +507,9 @@
 
       <!-- Scrollable Message Body -->
       <div class="ws-body" id="ws-body-content">
+        <!-- Security and privacy notice -->
+        <div class="ws-security-notice" id="ws-security-notice" role="note">⚠️ 隱私與安全提醒：網頁內容會傳送至目前的 LLM Provider；請勿把機密貼入網頁或選取文字。</div>
+
         <!-- Initial Loading State -->
         <div class="ws-state-box" id="ws-loading-state">
           <div class="ws-spinner"></div>
@@ -540,7 +557,7 @@
             id="ws-chat-input"
             class="ws-chat-textarea"
             rows="1"
-            placeholder="針對此文章進一步提問... (Enter 發送, Shift+Enter 換行)"
+            placeholder="針對此文章進一步提問... (Enter 換行, Ctrl+Enter 發送)"
             disabled
           ></textarea>
           <button type="button" id="ws-btn-send" class="ws-btn-send" title="發送提問" disabled>
@@ -805,6 +822,17 @@
       .ws-body::-webkit-scrollbar-track { background: transparent; }
       .ws-body::-webkit-scrollbar-thumb { background: #94a3b8; border: 2px solid #f8fafc; border-radius: 6px; }
       .ws-body::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+      .ws-security-notice {
+        margin-bottom: 8px;
+        padding: 7px 9px;
+        border: 1px solid #fde68a;
+        border-radius: 7px;
+        background: #fffbeb;
+        color: #92400e;
+        font-size: 11px;
+        line-height: 1.4;
+      }
 
       .ws-chat-feed {
         display: flex;
@@ -1342,8 +1370,8 @@
     const isolatedKeyboardEvents = ["keydown", "keypress", "keyup"];
 
     // Keep keyboard events from leaking through the Shadow DOM to host-page shortcuts.
-    // We handle Enter/Escape here because stopping propagation during window capture
-    // prevents the event from reaching the input/document listeners below it.
+    // This window-level handler remains a fallback for event paths that expose the
+    // input; the direct textarea handler below is authoritative for closed roots.
     function stopHostKeyboardShortcuts(e) {
       const eventPath = typeof e.composedPath === "function" ? e.composedPath() : [];
       // Compare DOM identifiers instead of object identity because content scripts
@@ -1353,20 +1381,36 @@
 
       e.stopPropagation();
 
-      if (e.type !== "keydown") return;
+      const action = INPUT_BEHAVIOR.getTextInputAction(e);
 
-      if (e.key === "Escape" && hostElement) {
+      if (action === "close" && hostElement) {
         btnClose.click();
         return;
       }
 
-      if (e.isComposing || e.keyCode === 229) return;
-
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (action === "send") {
         e.preventDefault();
         sendUserFollowUp();
       }
     }
+
+    // A closed Shadow DOM retargets events before they reach window, so the
+    // window-level fallback above cannot identify the textarea. Handle the
+    // input at its real target to preserve Enter's native newline behavior.
+    chatInput.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      const action = INPUT_BEHAVIOR.getTextInputAction(e);
+
+      if (action === "close" && hostElement) {
+        btnClose.click();
+        return;
+      }
+
+      if (action === "send") {
+        e.preventDefault();
+        sendUserFollowUp();
+      }
+    });
 
     isolatedKeyboardEvents.forEach((eventName) => {
       window.addEventListener(eventName, stopHostKeyboardShortcuts, true);
@@ -1817,7 +1861,11 @@
     errorBox.style.display = "none";
     suggestionsBar.style.display = "none";
     chatFeed.style.display = "flex";
-    chatFeed.innerHTML = `<div class="ws-selection-context">${escapeHtml(text)}</div>`;
+    chatFeed.replaceChildren();
+    const selectionContext = document.createElement("div");
+    selectionContext.className = "ws-selection-context";
+    selectionContext.textContent = text;
+    chatFeed.appendChild(selectionContext);
     chatInput.placeholder = ft().selection;
     updateInputState(true);
   }
@@ -1845,9 +1893,10 @@
     if (!context) return;
 
     stopCurrentGeneration();
+    const selectedData = `${pl().source}${context.title}\n${pl().selected}\n${context.text}`;
     conversationHistory = [{
       role: "user",
-      content: `${operationPrompt}\n\n${pl().source}${context.title}\n${pl().selected}\n${context.text}`
+      content: `${operationPrompt}\n\n${PROMPT_SAFETY.wrapUntrustedContent(selectedData)}`
     }];
 
     const loadingState = shadowRoot.getElementById("ws-loading-state");
@@ -1858,7 +1907,7 @@
 
     loadingState.style.display = "flex";
     chatFeed.style.display = "none";
-    chatFeed.innerHTML = "";
+    chatFeed.replaceChildren();
     errorBox.style.display = "none";
     suggestionsBar.style.display = "none";
     setFloatingStatus("connecting");
@@ -1887,7 +1936,7 @@
       stopCurrentGeneration();
       shadowRoot.getElementById("ws-loading-state").style.display = "none";
       shadowRoot.getElementById("ws-chat-feed").style.display = "none";
-      shadowRoot.getElementById("ws-chat-feed").innerHTML = "";
+      shadowRoot.getElementById("ws-chat-feed").replaceChildren();
       shadowRoot.getElementById("ws-error-box").style.display = "none";
       shadowRoot.getElementById("ws-suggestions-bar").style.display = "none";
       updateInputState(false);
@@ -1904,9 +1953,18 @@
     conversationHistory = [];
 
     const labels = pl();
+    const pageData = extraction.isSelection
+      ? `【${extraction.title || "Untitled webpage"}】\n${labels.selectedContent}\n${extraction.text}`
+      : [
+          `${labels.pageTitle}${extraction.title || "Untitled webpage"}`,
+          `${labels.pageUrl}${extraction.url || "N/A"}`,
+          "",
+          `${extraction.isYouTube ? ytpl().transcript : labels.pageBody}`,
+          extraction.text
+        ].join("\n");
     const promptContent = extraction.isSelection
-      ? `${labels.selectionSummary}【${extraction.title || "Untitled webpage"}】:\n\n${labels.selectedContent}\n${extraction.text}`
-      : `${extraction.isYouTube ? ytpl().summary : labels.pageSummary}\n\n${labels.pageTitle}${extraction.title || "Untitled webpage"}\n${labels.pageUrl}${extraction.url || "N/A"}\n\n${extraction.isYouTube ? ytpl().transcript : labels.pageBody}\n${extraction.text}`;
+      ? `${labels.selectionSummary}:\n\n${PROMPT_SAFETY.wrapUntrustedContent(pageData)}`
+      : `${extraction.isYouTube ? ytpl().summary : labels.pageSummary}\n\n${PROMPT_SAFETY.wrapUntrustedContent(pageData)}`;
 
     conversationHistory.push({ role: "user", content: promptContent });
 
@@ -1918,7 +1976,7 @@
 
     loadingState.style.display = "flex";
     chatFeed.style.display = "none";
-    chatFeed.innerHTML = "";
+    chatFeed.replaceChildren();
     errorBox.style.display = "none";
     suggestionsBar.style.display = "none";
     setFloatingStatus("connecting");
@@ -1937,7 +1995,7 @@
     chatInput.style.height = "auto";
 
     const requestText = pendingCustomSelection && selectionActionContext
-      ? `${pl().custom}\n\n${pl().instruction}\n${userText}\n\n${pl().selected}\n${selectionActionContext.text}`
+      ? `${pl().custom}\n\n${pl().instruction}\n${userText}\n\n${PROMPT_SAFETY.wrapUntrustedContent(`${pl().selected}\n${selectionActionContext.text}`)}`
       : userText;
     pendingCustomSelection = false;
     conversationHistory.push({ role: "user", content: requestText });
@@ -2034,6 +2092,10 @@
           isGenerating = false;
           showErrorState(msg.errorCode, msg.message);
           updateInputState(true);
+          if (currentPort) {
+            currentPort.disconnect();
+            currentPort = null;
+          }
         }
       });
 
@@ -2063,7 +2125,10 @@
     const chatFeed = shadowRoot.getElementById("ws-chat-feed");
     const row = document.createElement("div");
     row.className = "ws-msg-row";
-    row.innerHTML = `<div class="ws-msg-user">${escapeHtml(text)}</div>`;
+    const bubble = document.createElement("div");
+    bubble.className = "ws-msg-user";
+    bubble.textContent = text;
+    row.appendChild(bubble);
     chatFeed.appendChild(row);
     scrollToBottom(true);
   }
@@ -2082,10 +2147,10 @@
     const header = document.createElement("div");
     header.className = "ws-bubble-header";
     header.innerHTML = `
-      <span>${isFirstTurn ? fl().pageSummary : fl().aiAnswer}</span>
-      <button type="button" class="ws-btn-bubble-copy" title="${fl().copyShort}">
+      <span>${escapeHtml(isFirstTurn ? fl().pageSummary : fl().aiAnswer)}</span>
+      <button type="button" class="ws-btn-bubble-copy" title="${escapeHtml(fl().copyShort)}">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-        <span>${fl().copyShort}</span>
+        <span>${escapeHtml(fl().copyShort)}</span>
       </button>
     `;
 
@@ -2171,7 +2236,7 @@
       errorMsg.textContent = message || ytl().missingMessage;
       errorActions.innerHTML = `
         <button class="ws-btn-error-action" id="ws-btn-youtube-retry">
-          ${ytl().retryAction}
+          ${escapeHtml(ytl().retryAction)}
         </button>
       `;
       shadowRoot.getElementById("ws-btn-youtube-retry").addEventListener("click", () => {
@@ -2183,7 +2248,7 @@
       errorActions.innerHTML = `
         <button class="ws-btn-error-action" id="ws-btn-go-settings">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-          ${fl().settingsAction}
+          ${escapeHtml(fl().settingsAction)}
         </button>
       `;
       shadowRoot.getElementById("ws-btn-go-settings").addEventListener("click", () => {
@@ -2193,7 +2258,7 @@
       errorTitle.textContent = fl().requestFailed;
       errorMsg.textContent = message || fl().unexpected;
       errorActions.innerHTML = `
-        <button class="ws-btn-error-action" id="ws-btn-err-retry">${fl().retryAction}</button>
+        <button class="ws-btn-error-action" id="ws-btn-err-retry">${escapeHtml(fl().retryAction)}</button>
       `;
       shadowRoot.getElementById("ws-btn-err-retry").addEventListener("click", () => {
         if (conversationHistory.length > 0) executeStreamRequest();
@@ -2205,7 +2270,7 @@
   function parseMarkdown(md) {
     if (!md) return "";
 
-    let escaped = md
+    let escaped = String(md)
       .replace(/\r\n?/g, "\n")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -2326,7 +2391,7 @@
 
   function escapeHtml(text) {
     if (!text) return "";
-    return text
+    return String(text)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");

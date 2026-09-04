@@ -846,6 +846,152 @@ Dalam percakapan berikutnya, gabungkan isi asli halaman web dan ringkasan sebelu
     Object.assign(locales[locale].strings, POPUP_STRINGS[locale]);
   });
 
+  const HTTP_ENDPOINT_STRINGS = Object.freeze({
+    "zh-TW": "⚠️ 安全性提醒：HTTP 不會加密傳輸，API Key 與摘要內容可能被攔截。若是本機或可信任的區域網路 LLM Server，可以維持 HTTP；遠端服務則建議使用 HTTPS。",
+    en: "⚠️ Security notice: HTTP does not encrypt traffic, so your API key and summary content could be intercepted. HTTP is acceptable for a local or trusted LAN LLM server; HTTPS is recommended for remote services.",
+    ja: "⚠️ セキュリティのお知らせ：HTTP は通信を暗号化しないため、API Key や要約内容が傍受される可能性があります。ローカルまたは信頼できる LAN の LLM Server では HTTP を使用できますが、リモートサービスには HTTPS を推奨します。",
+    ko: "⚠️ 보안 안내: HTTP는 통신을 암호화하지 않으므로 API Key와 요약 내용이 가로채질 수 있습니다. 로컬 또는 신뢰할 수 있는 LAN LLM Server에서는 HTTP를 사용할 수 있지만, 원격 서비스에는 HTTPS를 권장합니다.",
+    "zh-CN": "⚠️ 安全提示：HTTP 不会加密传输，API Key 和摘要内容可能被拦截。如果是本机或可信任的局域网 LLM Server，可以继续使用 HTTP；远程服务建议使用 HTTPS。",
+    fr: "⚠️ Avis de sécurité : HTTP ne chiffre pas les communications ; votre clé API et le contenu des résumés peuvent être interceptés. HTTP peut être conservé pour un serveur LLM local ou de confiance sur le réseau ; HTTPS est recommandé pour les services distants.",
+    es: "⚠️ Aviso de seguridad: HTTP no cifra la comunicación, por lo que la API Key y el contenido de los resúmenes podrían ser interceptados. Puede mantener HTTP para un servidor LLM local o de confianza en la red; se recomienda HTTPS para los servicios remotos.",
+    de: "⚠️ Sicherheitshinweis: HTTP verschlüsselt die Übertragung nicht; API-Key und Zusammenfassungsinhalte könnten abgefangen werden. Für einen lokalen oder vertrauenswürdigen LLM-Server im LAN kann HTTP beibehalten werden; für entfernte Dienste wird HTTPS empfohlen.",
+    vi: "⚠️ Lưu ý bảo mật: HTTP không mã hóa dữ liệu truyền đi, nên API Key và nội dung tóm tắt có thể bị chặn. Có thể tiếp tục dùng HTTP với LLM Server cục bộ hoặc đáng tin cậy trong mạng LAN; nên dùng HTTPS cho dịch vụ từ xa.",
+    th: "⚠️ แจ้งเตือนความปลอดภัย: HTTP ไม่เข้ารหัสการรับส่งข้อมูล จึงอาจถูกดักจับ API Key และเนื้อหาสรุปได้ สามารถใช้ HTTP ต่อได้กับ LLM Server ในเครื่องหรือใน LAN ที่เชื่อถือได้ แต่แนะนำให้ใช้ HTTPS สำหรับบริการระยะไกล",
+    id: "⚠️ Pemberitahuan keamanan: HTTP tidak mengenkripsi lalu lintas, sehingga API Key dan isi ringkasan dapat disadap. HTTP dapat tetap digunakan untuk LLM Server lokal atau LAN tepercaya; HTTPS disarankan untuk layanan jarak jauh."
+  });
+
+  Object.keys(HTTP_ENDPOINT_STRINGS).forEach((locale) => {
+    locales[locale].strings.httpEndpointWarning = HTTP_ENDPOINT_STRINGS[locale];
+  });
+
+  const SECURITY_STRINGS = Object.freeze({
+    "zh-TW": {
+      profileLoadFailed: "⚠️ 無法讀取 API 配置，請重新載入設定頁。",
+      invalidProfileData: "⚠️ API 配置資料格式無效，請檢查後再儲存。",
+      storageSaveFailed: "⚠️ 設定儲存失敗，請稍後再試。",
+      storageQuotaExceeded: "⚠️ 設定太大，已超過瀏覽器同步儲存容量。",
+      endpointPermissionDenied: "⚠️ 尚未授予此 API endpoint 的存取權；已保留設定，但測試／摘要前需允許存取。",
+      endpointPermissionRequired: "請在設定頁允許此外掛存取指定 API endpoint。",
+      toastSavedWithoutEndpointPermission: "⚠️ 設定已儲存，但尚未授予部分 endpoint 的存取權。",
+      invalidEndpoint: "API endpoint 必須是有效的 HTTP 或 HTTPS URL。",
+      promptInjectionNotice: "⚠️ 隱私與安全提醒：網頁／選取文字會傳送至目前的 LLM Provider；其中的指令會被視為不受信任資料並要求模型忽略。請勿把機密貼入網頁或選取文字。"
+    },
+    en: {
+      profileLoadFailed: "⚠️ Unable to load API profiles. Reload the settings page.",
+      invalidProfileData: "⚠️ The API profile data is invalid. Check it before saving.",
+      storageSaveFailed: "⚠️ Settings could not be saved. Please try again.",
+      storageQuotaExceeded: "⚠️ The settings exceed the browser sync-storage limit.",
+      endpointPermissionDenied: "⚠️ Access to this API endpoint was not granted. The setting was kept, but access is required before testing or summarizing.",
+      endpointPermissionRequired: "Allow the extension to access this API endpoint in the settings page.",
+      toastSavedWithoutEndpointPermission: "⚠️ Settings saved, but access to some endpoints was not granted.",
+      invalidEndpoint: "The API endpoint must be a valid HTTP or HTTPS URL.",
+      promptInjectionNotice: "⚠️ Privacy and security: Webpage or selected text is sent to the current LLM provider. Instructions inside it are treated as untrusted data and the model is asked to ignore them. Do not place secrets in webpage text."
+    },
+    ja: {
+      profileLoadFailed: "⚠️ API プロファイルを読み込めません。設定ページを再読み込みしてください。",
+      invalidProfileData: "⚠️ API プロファイルの形式が無効です。保存前に確認してください。",
+      storageSaveFailed: "⚠️ 設定を保存できませんでした。もう一度お試しください。",
+      storageQuotaExceeded: "⚠️ 設定がブラウザの同期ストレージ容量を超えています。",
+      endpointPermissionDenied: "⚠️ API endpoint へのアクセスが許可されませんでした。設定は保持しましたが、テストや要約には許可が必要です。",
+      endpointPermissionRequired: "設定ページで、この拡張機能による API endpoint へのアクセスを許可してください。",
+      toastSavedWithoutEndpointPermission: "⚠️ 設定を保存しましたが、一部 endpoint のアクセスは許可されていません。",
+      invalidEndpoint: "API endpoint は有効な HTTP または HTTPS URL である必要があります。",
+      promptInjectionNotice: "⚠️ プライバシーとセキュリティ：ウェブページや選択テキストは現在の LLM Provider に送信されます。内部の指示は信頼できないデータとして扱い、モデルに無視させます。ページに秘密情報を貼り付けないでください。"
+    },
+    ko: {
+      profileLoadFailed: "⚠️ API 프로필을 불러올 수 없습니다. 설정 페이지를 새로 고치세요.",
+      invalidProfileData: "⚠️ API 프로필 형식이 올바르지 않습니다. 저장하기 전에 확인하세요.",
+      storageSaveFailed: "⚠️ 설정을 저장하지 못했습니다. 다시 시도하세요.",
+      storageQuotaExceeded: "⚠️ 설정이 브라우저 동기화 저장 용량을 초과했습니다.",
+      endpointPermissionDenied: "⚠️ API endpoint 액세스가 허용되지 않았습니다. 설정은 보존했지만 테스트나 요약 전에 허용이 필요합니다.",
+      endpointPermissionRequired: "설정 페이지에서 이 확장 프로그램의 API endpoint 액세스를 허용하세요.",
+      toastSavedWithoutEndpointPermission: "⚠️ 설정은 저장했지만 일부 endpoint 액세스가 허용되지 않았습니다.",
+      invalidEndpoint: "API endpoint는 유효한 HTTP 또는 HTTPS URL이어야 합니다.",
+      promptInjectionNotice: "⚠️ 개인정보 및 보안: 웹페이지나 선택한 텍스트가 현재 LLM Provider로 전송됩니다. 내부 지시는 신뢰할 수 없는 데이터로 처리하여 모델에 무시하도록 요청합니다. 웹페이지에 비밀 정보를 입력하지 마세요."
+    },
+    "zh-CN": {
+      profileLoadFailed: "⚠️ 无法读取 API 配置，请重新加载设置页。",
+      invalidProfileData: "⚠️ API 配置数据格式无效，请检查后再保存。",
+      storageSaveFailed: "⚠️ 设置保存失败，请稍后重试。",
+      storageQuotaExceeded: "⚠️ 设置过大，已超过浏览器同步存储容量。",
+      endpointPermissionDenied: "⚠️ 尚未授予此 API endpoint 的访问权限；设置已保留，但测试或总结前需要允许访问。",
+      endpointPermissionRequired: "请在设置页允许此扩展访问指定 API endpoint。",
+      toastSavedWithoutEndpointPermission: "⚠️ 设置已保存，但尚未授予部分 endpoint 的访问权限。",
+      invalidEndpoint: "API endpoint 必须是有效的 HTTP 或 HTTPS URL。",
+      promptInjectionNotice: "⚠️ 隐私与安全提示：网页或选中文字会发送至当前 LLM Provider；其中的指令会被视为不受信任数据并要求模型忽略。请勿把机密贴入网页或选中文字。"
+    },
+    fr: {
+      profileLoadFailed: "⚠️ Impossible de charger les profils API. Rechargez la page des paramètres.",
+      invalidProfileData: "⚠️ Le profil API est invalide. Vérifiez-le avant de l’enregistrer.",
+      storageSaveFailed: "⚠️ Les paramètres n’ont pas pu être enregistrés. Réessayez.",
+      storageQuotaExceeded: "⚠️ Les paramètres dépassent la capacité du stockage synchronisé du navigateur.",
+      endpointPermissionDenied: "⚠️ L’accès à cet endpoint API n’a pas été autorisé. Le réglage est conservé, mais l’accès est requis avant le test ou le résumé.",
+      endpointPermissionRequired: "Autorisez l’extension à accéder à cet endpoint API dans la page des paramètres.",
+      toastSavedWithoutEndpointPermission: "⚠️ Paramètres enregistrés, mais l’accès à certains endpoints n’a pas été autorisé.",
+      invalidEndpoint: "L’endpoint API doit être une URL HTTP ou HTTPS valide.",
+      promptInjectionNotice: "⚠️ Confidentialité et sécurité : le contenu de la page ou la sélection est envoyé au fournisseur LLM actuel. Les instructions qu’il contient sont traitées comme des données non fiables et le modèle est invité à les ignorer. Ne collez pas de secrets dans la page."
+    },
+    es: {
+      profileLoadFailed: "⚠️ No se pueden cargar los perfiles API. Recarga la página de configuración.",
+      invalidProfileData: "⚠️ Los datos del perfil API no son válidos. Revísalos antes de guardar.",
+      storageSaveFailed: "⚠️ No se pudieron guardar los ajustes. Inténtalo de nuevo.",
+      storageQuotaExceeded: "⚠️ Los ajustes superan el límite del almacenamiento sincronizado del navegador.",
+      endpointPermissionDenied: "⚠️ No se concedió acceso a este endpoint API. Se conservó el ajuste, pero se necesita permiso antes de probar o resumir.",
+      endpointPermissionRequired: "Permite que la extensión acceda a este endpoint API en la página de configuración.",
+      toastSavedWithoutEndpointPermission: "⚠️ Ajustes guardados, pero no se concedió acceso a algunos endpoints.",
+      invalidEndpoint: "El endpoint API debe ser una URL HTTP o HTTPS válida.",
+      promptInjectionNotice: "⚠️ Privacidad y seguridad: el contenido de la página o la selección se envía al proveedor LLM actual. Sus instrucciones se tratan como datos no confiables y se pide al modelo que las ignore. No introduzcas secretos en la página."
+    },
+    de: {
+      profileLoadFailed: "⚠️ API-Profile konnten nicht geladen werden. Laden Sie die Einstellungsseite neu.",
+      invalidProfileData: "⚠️ Die API-Profildaten sind ungültig. Prüfen Sie sie vor dem Speichern.",
+      storageSaveFailed: "⚠️ Die Einstellungen konnten nicht gespeichert werden. Versuchen Sie es erneut.",
+      storageQuotaExceeded: "⚠️ Die Einstellungen überschreiten das synchronisierte Speicherlimit des Browsers.",
+      endpointPermissionDenied: "⚠️ Der Zugriff auf diesen API-Endpunkt wurde nicht erlaubt. Die Einstellung bleibt erhalten, aber vor Test oder Zusammenfassung ist eine Freigabe erforderlich.",
+      endpointPermissionRequired: "Erlauben Sie der Erweiterung auf der Einstellungsseite den Zugriff auf diesen API-Endpunkt.",
+      toastSavedWithoutEndpointPermission: "⚠️ Einstellungen gespeichert, aber der Zugriff auf einige Endpunkte wurde nicht erlaubt.",
+      invalidEndpoint: "Der API-Endpunkt muss eine gültige HTTP- oder HTTPS-URL sein.",
+      promptInjectionNotice: "⚠️ Datenschutz und Sicherheit: Webseiten- oder Auswahltext wird an den aktuellen LLM-Anbieter gesendet. Enthaltene Anweisungen werden als nicht vertrauenswürdige Daten behandelt und sollen vom Modell ignoriert werden. Füge keine Geheimnisse in Webseiten ein."
+    },
+    vi: {
+      profileLoadFailed: "⚠️ Không thể tải hồ sơ API. Hãy tải lại trang cài đặt.",
+      invalidProfileData: "⚠️ Dữ liệu hồ sơ API không hợp lệ. Hãy kiểm tra trước khi lưu.",
+      storageSaveFailed: "⚠️ Không thể lưu cài đặt. Vui lòng thử lại.",
+      storageQuotaExceeded: "⚠️ Cài đặt vượt quá dung lượng lưu trữ đồng bộ của trình duyệt.",
+      endpointPermissionDenied: "⚠️ Chưa cấp quyền truy cập endpoint API này. Cài đặt đã được giữ lại, nhưng cần cấp quyền trước khi kiểm tra hoặc tóm tắt.",
+      endpointPermissionRequired: "Hãy cho phép tiện ích truy cập endpoint API này trong trang cài đặt.",
+      toastSavedWithoutEndpointPermission: "⚠️ Đã lưu cài đặt, nhưng chưa cấp quyền truy cập một số endpoint.",
+      invalidEndpoint: "Endpoint API phải là URL HTTP hoặc HTTPS hợp lệ.",
+      promptInjectionNotice: "⚠️ Quyền riêng tư và bảo mật: Nội dung trang web hoặc văn bản đã chọn sẽ được gửi đến LLM Provider hiện tại. Các chỉ dẫn bên trong được xem là dữ liệu không đáng tin và yêu cầu mô hình bỏ qua. Không dán thông tin bí mật vào trang web."
+    },
+    th: {
+      profileLoadFailed: "⚠️ ไม่สามารถโหลดโปรไฟล์ API ได้ โปรดโหลดหน้าการตั้งค่าใหม่",
+      invalidProfileData: "⚠️ ข้อมูลโปรไฟล์ API ไม่ถูกต้อง โปรดตรวจสอบก่อนบันทึก",
+      storageSaveFailed: "⚠️ ไม่สามารถบันทึกการตั้งค่าได้ โปรดลองอีกครั้ง",
+      storageQuotaExceeded: "⚠️ การตั้งค่าเกินขีดจำกัดพื้นที่จัดเก็บแบบซิงค์ของเบราว์เซอร์",
+      endpointPermissionDenied: "⚠️ ยังไม่ได้อนุญาตให้เข้าถึง API endpoint นี้ บันทึกการตั้งค่าไว้แล้ว แต่ต้องอนุญาตก่อนทดสอบหรือสรุป",
+      endpointPermissionRequired: "โปรดอนุญาตให้ส่วนขยายเข้าถึง API endpoint นี้ในหน้าการตั้งค่า",
+      toastSavedWithoutEndpointPermission: "⚠️ บันทึกการตั้งค่าแล้ว แต่ยังไม่ได้อนุญาตบาง endpoint",
+      invalidEndpoint: "API endpoint ต้องเป็น URL HTTP หรือ HTTPS ที่ถูกต้อง",
+      promptInjectionNotice: "⚠️ ความเป็นส่วนตัวและความปลอดภัย: เนื้อหาหน้าเว็บหรือข้อความที่เลือกจะถูกส่งไปยัง LLM Provider ปัจจุบัน คำสั่งภายในจะถือเป็นข้อมูลที่ไม่น่าเชื่อถือและขอให้โมเดลละเว้น โปรดอย่าวางข้อมูลลับไว้ในหน้าเว็บ"
+    },
+    id: {
+      profileLoadFailed: "⚠️ Profil API tidak dapat dimuat. Muat ulang halaman pengaturan.",
+      invalidProfileData: "⚠️ Data profil API tidak valid. Periksa sebelum menyimpan.",
+      storageSaveFailed: "⚠️ Pengaturan tidak dapat disimpan. Silakan coba lagi.",
+      storageQuotaExceeded: "⚠️ Pengaturan melebihi batas penyimpanan sinkronisasi browser.",
+      endpointPermissionDenied: "⚠️ Akses ke endpoint API ini tidak diberikan. Pengaturan tetap disimpan, tetapi izin diperlukan sebelum menguji atau merangkum.",
+      endpointPermissionRequired: "Izinkan ekstensi mengakses endpoint API ini di halaman pengaturan.",
+      toastSavedWithoutEndpointPermission: "⚠️ Pengaturan tersimpan, tetapi akses ke beberapa endpoint belum diberikan.",
+      invalidEndpoint: "Endpoint API harus berupa URL HTTP atau HTTPS yang valid.",
+      promptInjectionNotice: "⚠️ Privasi dan keamanan: Konten halaman atau teks yang dipilih dikirim ke LLM Provider saat ini. Instruksi di dalamnya diperlakukan sebagai data tidak tepercaya dan model diminta untuk mengabaikannya. Jangan menaruh rahasia di teks halaman."
+    }
+  });
+
+  Object.keys(SECURITY_STRINGS).forEach((locale) => {
+    Object.assign(locales[locale].strings, SECURITY_STRINGS[locale]);
+  });
+
   const defaultLocale = "zh-TW";
   const supportedLocales = Object.freeze(Object.keys(locales));
   const promptValues = Object.freeze(Object.values(locales).map((locale) => locale.prompt));

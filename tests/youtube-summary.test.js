@@ -164,11 +164,14 @@ assert.strictEqual(emptyResult.text, "");
 assert.strictEqual(emptyResult.segmentCount, 0);
 
 const manifest = JSON.parse(fs.readFileSync(path.join(projectRoot, "manifest.json"), "utf8"));
-assert.deepStrictEqual(manifest.content_scripts[0].js, [
-  "i18n.js",
-  "youtube-utils.js",
-  "content.js"
-]);
+assert.strictEqual(manifest.content_scripts, undefined);
+assert.ok(Array.isArray(manifest.permissions));
+assert.ok(manifest.permissions.includes("activeTab"));
+assert.ok(manifest.permissions.includes("scripting"));
+assert.ok(Array.isArray(manifest.optional_host_permissions));
+assert.ok(manifest.optional_host_permissions.includes("http://*/*"));
+assert.ok(manifest.optional_host_permissions.includes("https://*/*"));
+assert.ok(!JSON.stringify(manifest).includes("<all_urls>"));
 
 const contentSource = fs.readFileSync(path.join(projectRoot, "content.js"), "utf8");
 assert.match(contentSource, /YOUTUBE_TRANSCRIPT_NOT_FOUND/);
@@ -176,5 +179,8 @@ assert.match(contentSource, /youtubeHelper\.extractTranscript/);
 
 const packageSource = fs.readFileSync(path.join(projectRoot, "build_package.py"), "utf8");
 assert.match(packageSource, /"youtube-utils\.js"/);
+assert.match(packageSource, /"profile-schema\.js"/);
+assert.match(packageSource, /"prompt-safety\.js"/);
+assert.match(packageSource, /"input-behavior\.js"/);
 
 console.log("YouTube transcript summary regression checks passed.");

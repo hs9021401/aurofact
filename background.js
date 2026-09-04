@@ -1,8 +1,11 @@
 // background.js - AUROFACT service worker with multi-profile API support
 
-importScripts("i18n.js");
+importScripts("i18n.js", "profile-view.js", "profile-schema.js", "prompt-safety.js");
 
 const I18N = globalThis.WebSummarizerI18n;
+const PROFILE_VIEW = globalThis.AurofactProfileView;
+const PROFILE_SCHEMA = globalThis.AurofactProfileSchema;
+const PROMPT_SAFETY = globalThis.AurofactPromptSafety;
 const DEFAULT_SYSTEM_PROMPT = I18N.getPrompt(I18N.defaultLocale);
 
 const DEFAULT_PROFILES = [
@@ -99,6 +102,16 @@ const DEFAULT_PROFILES = [
 ];
 
 const CURRENT_PROVIDER_DEFAULTS_VERSION = 2;
+const LEGACY_SYNC_KEYS = ["apiKey", "apiUrl", "model", "apiFormat"];
+const PROFILE_SYNC_KEYS = [
+  "profiles",
+  "activeProfileId",
+  "uiLocale",
+  "providerDefaultsVersion",
+  "profileSchemaVersion",
+  ...LEGACY_SYNC_KEYS
+];
+const PROFILE_LOCAL_KEYS = ["profileApiKeys"];
 
 const TEMPLATE_NAME_KEYS = Object.freeze({
   minimax: "templateMinimaxName",
@@ -243,6 +256,155 @@ function migrateProfilesToLocale(rawProfiles, locale) {
   return { profiles: migratedProfiles, changed };
 }
 
+function storageGet(area, keys) {
+  return new Promise((resolve, reject) => {
+    try {
+      area.get(keys, (items) => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) {
+          reject(new Error(lastError.message));
+          return;
+        }
+        resolve(items || {});
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function storageSet(area, values) {
+  return new Promise((resolve, reject) => {
+    try {
+      area.set(values, () => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) {
+          reject(new Error(lastError.message));
+          return;
+        }
+        resolve();
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function storageRemove(area, keys) {
+  return new Promise((resolve, reject) => {
+    try {
+      area.remove(keys, () => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) {
+          reject(new Error(lastError.message));
+          return;
+        }
+        resolve();
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function hasOwn(object, key) {
+  return PROFILE_SCHEMA.hasOwn(object, key);
+}
+
+function isSameExtensionSender(sender) {
+  return Boolean(sender && sender.id === chrome.runtime.id);
+}
+
+function getPageSenderUrl(sender, pageName) {
+  if (!isSameExtensionSender(sender) || typeof sender.url !== "string") return false;
+  const senderUrl = sender.url.split(/[?#]/, 1)[0];
+  return senderUrl === chrome.runtime.getURL(pageName);
+}
+
+function isOptionsPageSender(sender) {
+  return getPageSenderUrl(sender, "options.html");
+}
+
+function isPopupPageSender(sender) {
+  return getPageSenderUrl(sender, "popup.html");
+}
+
+function postPortMessage(port, payload) {
+  try {
+    port.postMessage(payload);
+  } catch (error) {
+    // The content script may have navigated away or disconnected. Do not let
+    // a secondary messaging error crash the service worker.
+  }
+}
+
+function getProfileErrorResponse(error, fallbackCode = "PROFILE_LOAD_FAILED") {
+  const code = error?.code || fallbackCode;
+  return { success: false, error: code };
+}
+
+function getEndpointPermissionPattern(apiUrl) {
+  return PROFILE_VIEW.getEndpointPermissionPattern(apiUrl);
+}
+
+function hasEndpointPermission(apiUrl) {
+  const originPattern = getEndpointPermissionPattern(apiUrl);
+  if (!originPattern || !chrome.permissions?.contains) return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    try {
+      chrome.permissions.contains({ origins: [originPattern] }, (granted) => {
+        resolve(Boolean(granted) && !chrome.runtime.lastError);
+      });
+    } catch (error) {
+      resolve(false);
+    }
+  });
+}
+
+async function assertEndpointAccess(apiUrl, locale) {
+  if (!PROFILE_VIEW.isSupportedEndpoint(apiUrl)) {
+    return {
+      success: false,
+      errorCode: "INVALID_ENDPOINT",
+      error: I18N.translate(locale, "invalidEndpoint")
+    };
+  }
+
+  if (!(await hasEndpointPermission(apiUrl))) {
+    return {
+      success: false,
+      errorCode: "ENDPOINT_PERMISSION_REQUIRED",
+      error: I18N.translate(locale, "endpointPermissionRequired")
+    };
+  }
+
+  return { success: true };
+}
+
+async function fetchWithTimeout(url, options, signal, timeoutMs = 60000) {
+  const timeoutController = new AbortController();
+  const abortFromCaller = () => timeoutController.abort();
+  let timeoutId = null;
+
+  if (signal?.aborted) timeoutController.abort();
+  if (signal?.addEventListener) signal.addEventListener("abort", abortFromCaller, { once: true });
+  timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
+
+  try {
+    // API keys are sent in request headers. Never follow a redirect to an
+    // attacker-controlled origin where those headers could be disclosed.
+    return await fetch(url, {
+      ...options,
+      redirect: "error",
+      signal: timeoutController.signal
+    });
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener?.("abort", abortFromCaller);
+  }
+}
+
 function updateContextMenus(locale) {
   const normalizedLocale = I18N.normalizeLocale(locale);
   chrome.contextMenus.update("summarize_page", {
@@ -253,50 +415,40 @@ function updateContextMenus(locale) {
   });
 }
 
-// Initialize on extension install
-chrome.runtime.onInstalled.addListener(() => {
-  // Check and initialize profiles storage
-  chrome.storage.sync.get(["profiles", "activeProfileId", "apiKey", "apiUrl", "uiLocale"], (items) => {
-    let profiles = items.profiles;
-    let activeProfileId = items.activeProfileId;
-    const uiLocale = I18N.normalizeLocale(items.uiLocale);
-
+function recreateContextMenus(locale) {
+  return new Promise((resolve) => {
     chrome.contextMenus.removeAll(() => {
+      const lastError = chrome.runtime.lastError;
+      if (lastError) console.warn("Unable to reset context menus:", lastError.message);
+
       chrome.contextMenus.create({
         id: "summarize_page",
-        title: I18N.translate(uiLocale, "contextSummarizePage"),
+        title: I18N.translate(locale, "contextSummarizePage"),
         contexts: ["page", "frame"]
       });
 
       chrome.contextMenus.create({
         id: "summarize_selection",
-        title: I18N.translate(uiLocale, "contextSummarizeSelection"),
+        title: I18N.translate(locale, "contextSummarizeSelection"),
         contexts: ["selection"]
       });
+      resolve();
     });
-
-    // Migrate from legacy single-profile config if exists
-    if (!profiles || !Array.isArray(profiles) || profiles.length === 0) {
-      profiles = JSON.parse(JSON.stringify(DEFAULT_PROFILES));
-      if (items.apiKey) {
-        profiles[0].apiKey = items.apiKey;
-      }
-      if (items.apiUrl) {
-        profiles[0].apiUrl = items.apiUrl;
-      }
-      activeProfileId = profiles[0].id;
-
-      chrome.storage.sync.set({ profiles, activeProfileId, uiLocale });
-    } else if (!items.uiLocale || items.uiLocale !== uiLocale) {
-      chrome.storage.sync.set({ uiLocale });
-    }
   });
+}
+
+// Initialize on extension install/update. Profile migration is also run on
+// first use, so a storage error is surfaced instead of being silently ignored.
+chrome.runtime.onInstalled.addListener(() => {
+  getProfileConfig()
+    .then(({ uiLocale }) => recreateContextMenus(uiLocale))
+    .catch((error) => console.error("Unable to initialize profile storage:", error));
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  chrome.storage.sync.get(["uiLocale"], (items) => {
-    updateContextMenus(I18N.normalizeLocale(items.uiLocale));
-  });
+  getProfileConfig()
+    .then(({ uiLocale }) => updateContextMenus(uiLocale))
+    .catch((error) => console.error("Unable to load profile storage:", error));
 });
 
 async function sendSummaryToTab(tabId, payload) {
@@ -306,7 +458,7 @@ async function sendSummaryToTab(tabId, payload) {
     try {
       await chrome.scripting.executeScript({
         target: { tabId },
-        files: ["i18n.js", "youtube-utils.js", "content.js"]
+        files: ["i18n.js", "youtube-utils.js", "prompt-safety.js", "input-behavior.js", "content.js"]
       });
       setTimeout(() => {
         chrome.tabs.sendMessage(tabId, payload).catch((e) => {
@@ -348,59 +500,159 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       });
 });
 
-// Helper: Get active profile and all profiles
-async function getProfileConfig() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(["profiles", "activeProfileId", "apiKey", "apiUrl", "model", "apiFormat", "uiLocale", "providerDefaultsVersion"], (items) => {
-      let profiles = items.profiles;
-      let activeProfileId = items.activeProfileId;
-      const uiLocale = I18N.normalizeLocale(items.uiLocale);
+// Helper: Get active profile and all profiles. Metadata is kept in sync
+// storage, while API keys are hydrated from local storage only.
+let profileConfigPromise = null;
 
-      if (!profiles || !Array.isArray(profiles) || profiles.length === 0) {
-        profiles = JSON.parse(JSON.stringify(DEFAULT_PROFILES));
-        if (items.apiKey) profiles[0].apiKey = items.apiKey;
-        if (items.apiUrl) profiles[0].apiUrl = items.apiUrl;
-        if (items.model) profiles[0].model = items.model;
-        if (items.apiFormat) profiles[0].apiFormat = items.apiFormat;
-        activeProfileId = profiles[0].id;
-      }
+async function loadProfileConfig() {
+  const [syncItems, localItems] = await Promise.all([
+    storageGet(chrome.storage.sync, PROFILE_SYNC_KEYS),
+    storageGet(chrome.storage.local, PROFILE_LOCAL_KEYS)
+  ]);
 
-      const providerMigration = migrateProviderDefaults(profiles, items.providerDefaultsVersion);
-      profiles = providerMigration.profiles;
-      const localeMigration = migrateProfilesToLocale(profiles, uiLocale);
-      profiles = localeMigration.profiles;
-      const activeProfile = profiles.find((p) => p.id === activeProfileId) || profiles[0];
-      const valuesToPersist = {};
+  const hasStoredProfiles = Array.isArray(syncItems.profiles) && syncItems.profiles.length > 0;
+  let rawProfiles = hasStoredProfiles
+    ? syncItems.profiles
+    : JSON.parse(JSON.stringify(DEFAULT_PROFILES));
 
-      if (providerMigration.changed || localeMigration.changed || !items.profiles || !Array.isArray(items.profiles) || items.profiles.length === 0) {
-        valuesToPersist.profiles = profiles;
-      }
-      if (providerMigration.version !== Number(items.providerDefaultsVersion) || !Number.isFinite(Number(items.providerDefaultsVersion))) {
-        valuesToPersist.providerDefaultsVersion = providerMigration.version;
-      }
-      if (!items.uiLocale || items.uiLocale !== uiLocale) {
-        valuesToPersist.uiLocale = uiLocale;
-      }
+  // Migrate the legacy single-profile keys only when no profile array exists.
+  if (!hasStoredProfiles) {
+    if (syncItems.apiKey) rawProfiles[0].apiKey = syncItems.apiKey;
+    if (syncItems.apiUrl) rawProfiles[0].apiUrl = syncItems.apiUrl;
+    if (syncItems.model) rawProfiles[0].model = syncItems.model;
+    if (syncItems.apiFormat) rawProfiles[0].apiFormat = syncItems.apiFormat;
+  }
 
-      const finish = () => resolve({
-        profiles,
-        activeProfileId: activeProfile.id,
-        activeProfile,
-        uiLocale
-      });
+  const sanitized = PROFILE_SCHEMA.sanitizeProfiles(rawProfiles, DEFAULT_PROFILES);
+  let profiles = sanitized.profiles;
+  const uiLocale = I18N.normalizeLocale(syncItems.uiLocale);
 
-      if (Object.keys(valuesToPersist).length > 0) {
-        chrome.storage.sync.set(valuesToPersist, finish);
-      } else {
-        finish();
-      }
-    });
+  const providerMigration = migrateProviderDefaults(profiles, syncItems.providerDefaultsVersion);
+  profiles = providerMigration.profiles;
+  const localeMigration = migrateProfilesToLocale(profiles, uiLocale);
+  profiles = localeMigration.profiles;
+
+  const rawLocalKeyMap = localItems.profileApiKeys;
+  const normalizedLocalKeys = PROFILE_SCHEMA.normalizeKeyMap(
+    rawLocalKeyMap,
+    profiles.map((profile) => profile.id)
+  );
+  const apiKeys = { ...normalizedLocalKeys.keys };
+  let localStorageChanged = normalizedLocalKeys.changed || !hasOwn(localItems, "profileApiKeys");
+
+  profiles = profiles.map((profile) => {
+    const hasLocalKey = PROFILE_SCHEMA.hasOwn(rawLocalKeyMap, profile.id);
+    let apiKey = "";
+
+    if (hasLocalKey) {
+      apiKey = PROFILE_SCHEMA.normalizeApiKey(rawLocalKeyMap[profile.id]);
+    } else if (profile.apiKey) {
+      // One-time migration from API keys embedded in sync profiles.
+      apiKey = PROFILE_SCHEMA.normalizeApiKey(profile.apiKey);
+      if (apiKey) apiKeys[profile.id] = apiKey;
+      localStorageChanged = true;
+    }
+
+    return { ...profile, apiKey };
   });
+
+  if (!hasStoredProfiles && !PROFILE_SCHEMA.hasOwn(rawLocalKeyMap, profiles[0].id)) {
+    const legacyKey = PROFILE_SCHEMA.normalizeApiKey(syncItems.apiKey);
+    if (legacyKey && !profiles[0].apiKey) {
+      profiles[0].apiKey = legacyKey;
+      apiKeys[profiles[0].id] = legacyKey;
+      localStorageChanged = true;
+    }
+  }
+
+  const requestedActiveId = typeof syncItems.activeProfileId === "string"
+    ? syncItems.activeProfileId
+    : "";
+  const activeProfile = profiles.find((profile) => profile.id === requestedActiveId) || profiles[0];
+  const activeProfileId = activeProfile.id;
+  const syncProfiles = profiles.map(PROFILE_SCHEMA.stripApiKey);
+  const syncPayload = {
+    profiles: syncProfiles,
+    activeProfileId,
+    uiLocale,
+    providerDefaultsVersion: CURRENT_PROVIDER_DEFAULTS_VERSION,
+    profileSchemaVersion: PROFILE_SCHEMA.CURRENT_PROFILE_SCHEMA_VERSION
+  };
+
+  const syncStorageChanged = sanitized.changed ||
+    providerMigration.changed ||
+    localeMigration.changed ||
+    !hasStoredProfiles ||
+    JSON.stringify(syncItems.profiles || null) !== JSON.stringify(syncProfiles) ||
+    syncItems.activeProfileId !== activeProfileId ||
+    syncItems.uiLocale !== uiLocale ||
+    Number(syncItems.providerDefaultsVersion) !== CURRENT_PROVIDER_DEFAULTS_VERSION ||
+    Number(syncItems.profileSchemaVersion) !== PROFILE_SCHEMA.CURRENT_PROFILE_SCHEMA_VERSION ||
+    LEGACY_SYNC_KEYS.some((key) => hasOwn(syncItems, key));
+
+  // Write the local secret map first. If the sync write fails afterwards, the
+  // next load can safely retry the metadata migration without re-exposing keys.
+  if (localStorageChanged) {
+    await storageSet(chrome.storage.local, { profileApiKeys: apiKeys });
+  }
+  if (syncStorageChanged) {
+    await storageSet(chrome.storage.sync, syncPayload);
+    if (LEGACY_SYNC_KEYS.some((key) => hasOwn(syncItems, key))) {
+      await storageRemove(chrome.storage.sync, LEGACY_SYNC_KEYS);
+    }
+  }
+
+  return {
+    profiles,
+    activeProfileId,
+    activeProfile,
+    uiLocale
+  };
+}
+
+function getProfileConfig() {
+  if (!profileConfigPromise) {
+    profileConfigPromise = loadProfileConfig().finally(() => {
+      profileConfigPromise = null;
+    });
+  }
+  return profileConfigPromise;
+}
+
+async function saveProfileConfig(rawProfiles, activeProfileId, requestedLocale) {
+  const prepared = PROFILE_SCHEMA.prepareProfilesForSave(rawProfiles, activeProfileId);
+  const uiLocale = I18N.normalizeLocale(requestedLocale);
+
+  await storageSet(chrome.storage.local, { profileApiKeys: prepared.apiKeys });
+  await storageSet(chrome.storage.sync, {
+    profiles: prepared.syncProfiles,
+    activeProfileId: prepared.activeProfileId,
+    uiLocale,
+    providerDefaultsVersion: CURRENT_PROVIDER_DEFAULTS_VERSION,
+    profileSchemaVersion: PROFILE_SCHEMA.CURRENT_PROFILE_SCHEMA_VERSION
+  });
+  await storageRemove(chrome.storage.sync, LEGACY_SYNC_KEYS);
+
+  const activeProfile = prepared.profiles.find((profile) => profile.id === prepared.activeProfileId);
+  return {
+    profiles: prepared.profiles,
+    activeProfileId: prepared.activeProfileId,
+    activeProfile,
+    uiLocale
+  };
 }
 
 // Handle long-lived streaming connection from content script
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== "summarize-stream") return;
+  if (!isSameExtensionSender(port.sender)) {
+    try {
+      port.disconnect();
+    } catch (error) {
+      // Ignore disconnect failures for an already-closed port.
+    }
+    return;
+  }
 
   let abortController = new AbortController();
 
@@ -408,28 +660,63 @@ chrome.runtime.onConnect.addListener((port) => {
     abortController.abort();
   });
 
-  port.onMessage.addListener(async (msg) => {
-    if (msg.action === "START_STREAM_CHAT") {
-      const { messages, profileId } = msg;
-      await streamChat(port, abortController.signal, messages, profileId);
-    } else if (msg.action === "ABORT_STREAM") {
-      abortController.abort();
-      abortController = new AbortController();
-    }
+  port.onMessage.addListener((msg) => {
+    Promise.resolve().then(async () => {
+      if (!msg || typeof msg.action !== "string") return;
+
+      if (msg.action === "START_STREAM_CHAT") {
+        const { messages, profileId } = msg;
+        await streamChat(port, abortController.signal, messages, profileId);
+      } else if (msg.action === "ABORT_STREAM") {
+        abortController.abort();
+        abortController = new AbortController();
+      }
+    }).catch((error) => {
+      postPortMessage(port, {
+        type: "ERROR",
+        errorCode: error?.code || "STREAM_REQUEST_FAILED",
+        message: "無法處理串流請求，請檢查設定與輸入內容。"
+      });
+    });
   });
 });
 
 // Stream Chat Implementation
 async function streamChat(port, signal, rawMessages, requestedProfileId) {
-  const { profiles, activeProfile } = await getProfileConfig();
+  const { profiles, activeProfile, uiLocale } = await getProfileConfig();
+  const cleanMessages = PROFILE_SCHEMA.prepareChatMessages(rawMessages);
   
   // Use requested profile if specified, otherwise active profile
-  const profile = (requestedProfileId && profiles.find((p) => p.id === requestedProfileId)) || activeProfile;
+  const profile = requestedProfileId
+    ? profiles.find((p) => p.id === requestedProfileId)
+    : activeProfile;
 
-  const isOllamaLocal = profile.apiUrl && profile.apiUrl.includes("localhost");
+  if (!profile) {
+    postPortMessage(port, {
+      type: "ERROR",
+      errorCode: "PROFILE_NOT_FOUND",
+      message: "找不到指定的 API 配置。"
+    });
+    return;
+  }
+
+  const apiUrl = profile.apiUrl && profile.apiUrl.trim() !== ""
+    ? profile.apiUrl.trim()
+    : "https://api.minimaxi.com/anthropic/v1/messages";
+  const endpointAccess = await assertEndpointAccess(apiUrl, uiLocale);
+  if (!endpointAccess.success) {
+    postPortMessage(port, {
+      type: "ERROR",
+      errorCode: endpointAccess.errorCode,
+      message: endpointAccess.error
+    });
+    return;
+  }
+
+  const isOllamaLocal = PROFILE_VIEW.isLocalProfile(profile);
 
   if ((!profile.apiKey || profile.apiKey.trim() === "") && !isOllamaLocal) {
-    port.postMessage({
+    postPortMessage(port, {
       type: "ERROR",
       errorCode: "NO_API_KEY",
       message: `尚未設定 [${profile.name || "當前配置"}] 的 API Key！請至外掛設定頁面配置密鑰。`
@@ -440,35 +727,14 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
   const format = profile.apiFormat || (profile.apiUrl.includes("/chat/completions") ? "openai" : "anthropic");
   const modelName = profile.model || (format === "anthropic" ? "MiniMax-M3" : "gpt-5.6-luna");
   const maxTokens = parseInt(profile.maxTokens, 10) || 2048;
-  const temperature = parseFloat(profile.temperature) || 0.5;
-  const sysPrompt = profile.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+  const temperature = Number.isFinite(Number(profile.temperature)) ? Number(profile.temperature) : 0.5;
+  const sysPrompt = PROMPT_SAFETY.appendPromptInjectionGuard(
+    profile.systemPrompt || DEFAULT_SYSTEM_PROMPT
+  );
   const apiKeyTrimmed = (profile.apiKey || "").trim();
-
-  let apiUrl = profile.apiUrl && profile.apiUrl.trim() !== ""
-    ? profile.apiUrl.trim()
-    : "https://api.minimaxi.com/anthropic/v1/messages";
 
   let headers = { "Content-Type": "application/json" };
   let requestBody = {};
-
-  // Clean and merge messages to alternate user / assistant
-  const cleanMessages = [];
-  for (let i = 0; i < rawMessages.length; i++) {
-    const m = rawMessages[i];
-    if (m.role !== "user" && m.role !== "assistant") continue;
-    if (!m.content || m.content.trim() === "") continue;
-
-    if (cleanMessages.length > 0 && cleanMessages[cleanMessages.length - 1].role === m.role) {
-      cleanMessages[cleanMessages.length - 1].content += "\n\n" + m.content;
-    } else {
-      cleanMessages.push({ role: m.role, content: m.content });
-    }
-  }
-
-  if (cleanMessages.length === 0) {
-    port.postMessage({ type: "ERROR", errorCode: "EMPTY_MESSAGES", message: "對話內容為空。" });
-    return;
-  }
 
   if (format === "anthropic") {
     headers["x-api-key"] = apiKeyTrimmed;
@@ -504,14 +770,13 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
   }
 
   try {
-    port.postMessage({ type: "START", model: modelName, profileName: profile.name });
+    postPortMessage(port, { type: "START", model: modelName, profileName: profile.name });
 
-    const response = await fetch(apiUrl, {
+    const response = await fetchWithTimeout(apiUrl, {
       method: "POST",
-      signal: signal,
       headers: headers,
       body: JSON.stringify(requestBody)
-    });
+    }, signal);
 
     if (!response.ok) {
       let errorDetail = "";
@@ -521,8 +786,9 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
       } catch (e) {
         errorDetail = await response.text();
       }
+      errorDetail = String(errorDetail || "").slice(0, 4000);
 
-      port.postMessage({
+      postPortMessage(port, {
         type: "ERROR",
         errorCode: "API_HTTP_ERROR",
         message: `[${profile.name}] API 請求失敗 (${response.status} ${response.statusText}):\n${errorDetail || "請檢查 API Key、端點與格式設定。"}`
@@ -530,15 +796,36 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
       return;
     }
 
+    if (!response.body || typeof response.body.getReader !== "function") {
+      throw PROFILE_SCHEMA.makeError("EMPTY_RESPONSE", "The API returned no response body.");
+    }
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
+    let streamedChars = 0;
+
+    const emitChunk = (text) => {
+      if (typeof text !== "string" || !text) return;
+      const remaining = PROFILE_SCHEMA.MAX_STREAM_CHARS - streamedChars;
+      if (remaining <= 0) throw PROFILE_SCHEMA.makeError("STREAM_LIMIT_EXCEEDED", "The response is too large.");
+
+      const chunk = text.slice(0, remaining);
+      streamedChars += chunk.length;
+      postPortMessage(port, { type: "CHUNK", text: chunk });
+      if (chunk.length < text.length) {
+        throw PROFILE_SCHEMA.makeError("STREAM_LIMIT_EXCEEDED", "The response is too large.");
+      }
+    };
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
+      if (buffer.length > PROFILE_SCHEMA.MAX_SSE_BUFFER_CHARS) {
+        throw PROFILE_SCHEMA.makeError("STREAM_BUFFER_LIMIT_EXCEEDED", "The streamed response buffer is too large.");
+      }
       const lines = buffer.split("\n");
       buffer = lines.pop();
 
@@ -555,15 +842,15 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
             
             // Anthropic stream
             if (data.type === "content_block_delta" && data.delta && data.delta.text) {
-              port.postMessage({ type: "CHUNK", text: data.delta.text });
+              emitChunk(data.delta.text);
             } 
             // OpenAI stream
             else if (data.choices && data.choices[0]?.delta?.content) {
-              port.postMessage({ type: "CHUNK", text: data.choices[0].delta.content });
+              emitChunk(data.choices[0].delta.content);
             }
             // Direct text fallback
             else if (data.text) {
-              port.postMessage({ type: "CHUNK", text: data.text });
+              emitChunk(data.text);
             }
           } catch (jsonErr) {
             // Non-json SSE data line
@@ -572,75 +859,133 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
       }
     }
 
-    port.postMessage({ type: "DONE" });
+    postPortMessage(port, { type: "DONE" });
   } catch (err) {
     if (err.name === "AbortError") {
-      port.postMessage({ type: "ABORTED" });
+      postPortMessage(port, { type: "ABORTED" });
       return;
     }
 
     console.error("Stream chat error:", err);
-    port.postMessage({
+    postPortMessage(port, {
       type: "ERROR",
-      errorCode: "NETWORK_ERROR",
-      message: `網路連線或請求錯誤: ${err.message || err}`
+      errorCode: err?.code || "NETWORK_ERROR",
+      message: err?.code === "STREAM_LIMIT_EXCEEDED" || err?.code === "STREAM_BUFFER_LIMIT_EXCEEDED"
+        ? "API 回應過大，已停止串流以避免外掛資源耗盡。"
+        : `網路連線或請求錯誤: ${err.message || err}`
     });
   }
 }
 
 // Runtime message listener for profiles management & connection testing
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "GET_PROFILES") {
-    getProfileConfig().then((data) => sendResponse({ success: true, ...data }));
-    return true;
+  if (!isSameExtensionSender(sender)) {
+    sendResponse({ success: false, error: "UNAUTHORIZED" });
+    return false;
   }
 
-  if (request.action === "SET_ACTIVE_PROFILE") {
-    chrome.storage.sync.set({ activeProfileId: request.profileId }, () => {
-      sendResponse({ success: true });
+  const action = request?.action;
+
+  if (action === "GET_PUBLIC_PROFILES" || action === "GET_PROFILES") {
+    getProfileConfig().then((data) => {
+      sendResponse({
+        success: true,
+        ...PROFILE_VIEW.toPublicProfilePayload(data)
+      });
+    }).catch((error) => {
+      sendResponse(getProfileErrorResponse(error));
     });
     return true;
   }
 
-  if (request.action === "SAVE_ALL_PROFILES") {
-    chrome.storage.sync.set({
-      profiles: request.profiles,
-      activeProfileId: request.activeProfileId,
-      uiLocale: I18N.normalizeLocale(request.uiLocale)
-    }, () => {
-      sendResponse({ success: true });
-    });
+  if (action === "GET_PROFILES_FOR_OPTIONS") {
+    if (!isOptionsPageSender(sender)) {
+      sendResponse({ success: false, error: "UNAUTHORIZED" });
+      return false;
+    }
+
+    getProfileConfig().then((data) => sendResponse({ success: true, ...data }))
+      .catch((error) => sendResponse(getProfileErrorResponse(error)));
     return true;
   }
 
-  if (request.action === "OPEN_OPTIONS") {
+  if (action === "SET_ACTIVE_PROFILE") {
+    Promise.resolve().then(async () => {
+      const data = await getProfileConfig();
+      if (typeof request.profileId !== "string" ||
+          !data.profiles.some((profile) => profile.id === request.profileId)) {
+        throw PROFILE_SCHEMA.makeError("INVALID_PROFILE_DATA", "Unknown active profile.");
+      }
+      await storageSet(chrome.storage.sync, { activeProfileId: request.profileId });
+      return { success: true };
+    }).then(sendResponse)
+      .catch((error) => sendResponse(getProfileErrorResponse(error, "PROFILE_SAVE_FAILED")));
+    return true;
+  }
+
+  if (action === "SAVE_ALL_PROFILES") {
+    if (!isOptionsPageSender(sender)) {
+      sendResponse({ success: false, error: "UNAUTHORIZED" });
+      return false;
+    }
+
+    saveProfileConfig(request.profiles, request.activeProfileId, request.uiLocale)
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse(getProfileErrorResponse(error, "PROFILE_SAVE_FAILED")));
+    return true;
+  }
+
+  if (action === "OPEN_OPTIONS") {
     chrome.runtime.openOptionsPage();
     sendResponse({ success: true });
     return true;
   }
 
-  if (request.action === "TEST_PROFILE_CONNECTION") {
-    testProfileConnection(request.profile, request.locale).then((result) => {
-      sendResponse(result);
-    });
+  if (action === "TEST_PROFILE_CONNECTION") {
+    if (!isOptionsPageSender(sender)) {
+      sendResponse({ success: false, error: "UNAUTHORIZED" });
+      return false;
+    }
+
+    Promise.resolve().then(() => {
+      const profile = PROFILE_SCHEMA.validateProfileRecord(request.profile);
+      return testProfileConnection(profile, request.locale);
+    }).then(sendResponse)
+      .catch((error) => sendResponse(getProfileErrorResponse(error, "PROFILE_TEST_FAILED")));
     return true;
   }
 
-  if (request.action === "SET_UI_LOCALE") {
+  if (action === "SET_UI_LOCALE") {
+    if (!isOptionsPageSender(sender)) {
+      sendResponse({ success: false, error: "UNAUTHORIZED" });
+      return false;
+    }
+
     const uiLocale = I18N.normalizeLocale(request.locale);
-    chrome.storage.sync.set({ uiLocale }, () => {
-      updateContextMenus(uiLocale);
-      sendResponse({ success: true, uiLocale });
-    });
+    storageSet(chrome.storage.sync, { uiLocale })
+      .then(() => {
+        updateContextMenus(uiLocale);
+        sendResponse({ success: true, uiLocale });
+      })
+      .catch((error) => sendResponse(getProfileErrorResponse(error, "PROFILE_SAVE_FAILED")));
     return true;
   }
+
+  sendResponse({ success: false, error: "UNKNOWN_ACTION" });
+  return false;
 });
 
 // Test connection for a given profile
 async function testProfileConnection(profile, requestedLocale) {
   const locale = I18N.normalizeLocale(requestedLocale);
   const startTime = Date.now();
-  const isOllamaLocal = profile.apiUrl && profile.apiUrl.includes("localhost");
+  const apiUrl = profile.apiUrl && profile.apiUrl.trim() !== ""
+    ? profile.apiUrl.trim()
+    : "https://api.minimaxi.com/anthropic/v1/messages";
+  const endpointAccess = await assertEndpointAccess(apiUrl, locale);
+  if (!endpointAccess.success) return endpointAccess;
+
+  const isOllamaLocal = PROFILE_VIEW.isLocalProfile(profile);
 
   if ((!profile.apiKey || profile.apiKey.trim() === "") && !isOllamaLocal) {
     return {
@@ -649,11 +994,8 @@ async function testProfileConnection(profile, requestedLocale) {
     };
   }
 
-  const format = profile.apiFormat || (profile.apiUrl.includes("/chat/completions") ? "openai" : "anthropic");
+  const format = profile.apiFormat || (apiUrl.includes("/chat/completions") ? "openai" : "anthropic");
   const modelName = profile.model || (format === "anthropic" ? "MiniMax-M3" : "gpt-5.6-luna");
-  const apiUrl = profile.apiUrl && profile.apiUrl.trim() !== ""
-    ? profile.apiUrl.trim()
-    : "https://api.minimaxi.com/anthropic/v1/messages";
   const apiKeyTrimmed = (profile.apiKey || "").trim();
 
   let headers = { "Content-Type": "application/json" };
@@ -680,7 +1022,7 @@ async function testProfileConnection(profile, requestedLocale) {
   }
 
   try {
-    const response = await fetch(apiUrl, {
+    const response = await fetchWithTimeout(apiUrl, {
       method: "POST",
       headers: headers,
       body: JSON.stringify(requestBody)
@@ -696,6 +1038,7 @@ async function testProfileConnection(profile, requestedLocale) {
       } catch (e) {
         detail = await response.text();
       }
+      detail = String(detail || "").slice(0, 4000);
       return {
         success: false,
         status: response.status,
@@ -721,7 +1064,7 @@ async function testProfileConnection(profile, requestedLocale) {
       success: true,
       latency: latency,
       model: data.model || modelName,
-      reply: replyText.trim()
+      reply: replyText.trim().slice(0, 1000)
     };
   } catch (err) {
     return {

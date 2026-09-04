@@ -6,6 +6,12 @@ if (!I18N) {
   throw new Error("Shared i18n data was not loaded.");
 }
 
+const PROFILE_VIEW = globalThis.AurofactProfileView;
+
+if (!PROFILE_VIEW) {
+  throw new Error("Shared profile helpers were not loaded.");
+}
+
 const TEMPLATES = {
   minimax: {
     apiFormat: "anthropic",
@@ -94,6 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const profNameInput = document.getElementById("prof-name");
   const profFormatSelect = document.getElementById("prof-format");
   const profUrlInput = document.getElementById("prof-url");
+  const profUrlWarning = document.getElementById("prof-url-warning");
   const profKeyInput = document.getElementById("prof-key");
   const btnToggleKey = document.getElementById("btn-toggle-key");
   const keyStatusBadge = document.getElementById("key-status-badge");
@@ -113,6 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const toast = document.getElementById("toast");
   const languageSelect = document.getElementById("language-select");
   const appVersion = document.getElementById("app-version");
+  let toastTimer = null;
 
   if (appVersion) {
     appVersion.textContent = chrome.runtime.getManifest().version;
@@ -122,13 +130,84 @@ document.addEventListener("DOMContentLoaded", () => {
     changeLocale(languageSelect.value);
   });
 
+  function sendRuntimeMessage(request) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.runtime.sendMessage(request, (response) => {
+          const lastError = chrome.runtime.lastError;
+          if (lastError) {
+            reject(new Error(lastError.message));
+            return;
+          }
+          resolve(response);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  function responseErrorMessage(response, fallbackKey = "storageSaveFailed") {
+    const keyByCode = {
+      PROFILE_LOAD_FAILED: "profileLoadFailed",
+      INVALID_PROFILE_DATA: "invalidProfileData",
+      PROFILE_SAVE_FAILED: "storageSaveFailed",
+      STORAGE_QUOTA_EXCEEDED: "storageQuotaExceeded",
+      INVALID_ENDPOINT: "invalidEndpoint",
+      ENDPOINT_PERMISSION_REQUIRED: "endpointPermissionRequired",
+      PROFILE_TEST_FAILED: "storageSaveFailed"
+    };
+    return t(keyByCode[response?.error] || fallbackKey);
+  }
+
+  async function requestEndpointPermissions(profileList) {
+    const origins = new Set();
+    let invalid = false;
+    for (const profile of Array.isArray(profileList) ? profileList : []) {
+      const url = typeof profile?.apiUrl === "string" ? profile.apiUrl.trim() : "";
+      if (!url) continue;
+
+      const pattern = PROFILE_VIEW.getEndpointPermissionPattern(url);
+      if (!pattern) {
+        invalid = true;
+        continue;
+      }
+      origins.add(pattern);
+    }
+
+    const originList = [...origins];
+    if (originList.length === 0) return { granted: !invalid, invalid, origins: [] };
+    if (!chrome.permissions?.request) return { granted: false, unavailable: true, invalid, origins: originList };
+
+    return new Promise((resolve) => {
+      try {
+        chrome.permissions.request({ origins: originList }, (granted) => {
+          resolve({
+            granted: Boolean(granted) && !chrome.runtime.lastError && !invalid,
+            invalid,
+            origins: originList
+          });
+        });
+      } catch (error) {
+        resolve({ granted: false, invalid, origins: originList });
+      }
+    });
+  }
+
   // Load the selected UI locale before profiles so default prompts are localized on first render.
   chrome.storage.sync.get(["uiLocale"], (items) => {
-    currentLocale = I18N.normalizeLocale(items.uiLocale);
+    if (chrome.runtime.lastError) {
+      currentLocale = I18N.defaultLocale;
+      applyTranslations();
+      showToast(t("profileLoadFailed"));
+      return;
+    }
+
+    currentLocale = I18N.normalizeLocale(items?.uiLocale);
     applyTranslations();
 
     // Load profiles from background/storage
-    chrome.runtime.sendMessage({ action: "GET_PROFILES" }, (response) => {
+    sendRuntimeMessage({ action: "GET_PROFILES_FOR_OPTIONS" }).then((response) => {
       if (response && response.success) {
         profiles = (response.profiles || []).map((profile) => ({ ...profile }));
         activeProfileId = response.activeProfileId || profiles[0]?.id || "";
@@ -138,8 +217,10 @@ document.addEventListener("DOMContentLoaded", () => {
         migrateManagedProfileNames();
         renderProfileList();
         loadProfileToEditor(selectedProfileId);
+      } else {
+        showToast(responseErrorMessage(response, "profileLoadFailed"));
       }
-    });
+    }).catch(() => showToast(t("profileLoadFailed")));
   });
 
   function t(key, values = {}) {
@@ -194,12 +275,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderProfileList();
     loadProfileToEditor(selectedProfileId);
 
-    chrome.runtime.sendMessage({ action: "SET_UI_LOCALE", locale: currentLocale }, (response) => {
-      if (chrome.runtime.lastError || !response?.success) {
-        chrome.storage.sync.set({ uiLocale: currentLocale });
-      }
+    sendRuntimeMessage({ action: "SET_UI_LOCALE", locale: currentLocale }).then((response) => {
+      if (!response?.success) throw new Error(responseErrorMessage(response));
       showToast(t("languageChanged", { language: I18N.getLocale(currentLocale).label }));
-    });
+    }).catch(() => showToast(t("storageSaveFailed")));
   }
 
   function migrateManagedPrompts() {
@@ -332,6 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
     profTemperatureRange.value = p.temperature || 0.5;
     valTemperature.textContent = profTemperatureRange.value;
 
+    updateEndpointWarning(p.apiUrl);
     updateKeyStatus(p.apiKey, p.apiUrl);
     updateHelpLink(p.apiUrl);
     testResultBox.style.display = "none";
@@ -389,6 +469,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   profUrlInput.addEventListener("input", () => {
+    updateEndpointWarning(profUrlInput.value);
     updateHelpLink(profUrlInput.value);
     updateKeyStatus(profKeyInput.value, profUrlInput.value);
   });
@@ -427,7 +508,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function updateKeyStatus(key, url) {
-    const isOllama = url && url.includes("localhost");
+    const isOllama = PROFILE_VIEW.isLocalEndpoint(url);
     if (isOllama) {
       keyStatusBadge.textContent = t("localNoKey");
       keyStatusBadge.className = "status-badge status-saved";
@@ -438,6 +519,11 @@ document.addEventListener("DOMContentLoaded", () => {
       keyStatusBadge.textContent = t("keyNotSet");
       keyStatusBadge.className = "status-badge status-empty";
     }
+  }
+
+  function updateEndpointWarning(url) {
+    if (!profUrlWarning) return;
+    profUrlWarning.hidden = !PROFILE_VIEW.isHttpEndpoint(url);
   }
 
   function updateHelpLink(url) {
@@ -465,7 +551,7 @@ document.addEventListener("DOMContentLoaded", () => {
       keyHelpLink.textContent = t("helpAnthropic");
       keyHelpLink.href = "https://console.anthropic.com";
       keyHelpLink.style.display = "inline";
-    } else if (url.includes("localhost") || url.includes("11434")) {
+    } else if (PROFILE_VIEW.isLocalEndpoint(url) || url.includes("11434")) {
       keyHelpLink.textContent = t("helpOllama");
       keyHelpLink.href = "https://ollama.com";
       keyHelpLink.style.display = "inline";
@@ -586,11 +672,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!currentP) return;
     const currentProfileName = currentP.name || t("unnamedProfile");
 
-    const isLocalOllama = currentP.apiUrl && currentP.apiUrl.includes("localhost");
+    const isLocalOllama = PROFILE_VIEW.isLocalEndpoint(currentP.apiUrl);
 
     if (!currentP.apiKey && !isLocalOllama) {
       showTestResult("error", escapeHtml(t("testMissingKey", { name: currentProfileName })));
       profKeyInput.focus();
+      return;
+    }
+
+    const endpointPermission = await requestEndpointPermissions([currentP]);
+    if (!endpointPermission.granted) {
+      const messageKey = endpointPermission.invalid ? "invalidEndpoint" : "endpointPermissionDenied";
+      showTestResult("error", escapeHtml(t(messageKey)));
       return;
     }
 
@@ -599,7 +692,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showTestResult("loading", escapeHtml(t("testRequesting", { name: currentProfileName })));
 
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "TEST_PROFILE_CONNECTION",
         profile: currentP,
         locale: currentLocale
@@ -635,25 +728,41 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Save All Profiles
-  btnSaveAll.addEventListener("click", () => {
+  btnSaveAll.addEventListener("click", async () => {
     saveCurrentEditorToMemory();
 
     btnSaveAll.disabled = true;
-    chrome.runtime.sendMessage({
-      action: "SAVE_ALL_PROFILES",
-      profiles: profiles,
-      activeProfileId: activeProfileId,
-      uiLocale: currentLocale
-    }, () => {
-      btnSaveAll.disabled = false;
-      showToast(t("toastSaved"));
+    try {
+      const endpointPermission = await requestEndpointPermissions(profiles);
+      const response = await sendRuntimeMessage({
+        action: "SAVE_ALL_PROFILES",
+        profiles,
+        activeProfileId,
+        uiLocale: currentLocale
+      });
+
+      if (!response?.success) {
+        showToast(responseErrorMessage(response));
+        return;
+      }
+
+      if (!endpointPermission.granted) {
+        showToast(endpointPermission.invalid
+          ? t("invalidEndpoint")
+          : t("toastSavedWithoutEndpointPermission"));
+      } else {
+        showToast(t("toastSaved"));
+      }
       renderProfileList();
       loadProfileToEditor(selectedProfileId);
-    });
+    } catch (error) {
+      showToast(t("storageSaveFailed"));
+    } finally {
+      btnSaveAll.disabled = false;
+    }
   });
 
   // Toast Helper
-  let toastTimer = null;
   function showToast(message) {
     toast.textContent = message;
     toast.classList.add("show");

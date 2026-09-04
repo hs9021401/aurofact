@@ -30,7 +30,8 @@
 - 📤 **摘要匯出**：可將完整摘要與延伸對話下載為 Markdown（`.md`）或純文字（`.txt`）。
 - ⌨️ **快捷鍵摘要**：使用 `Alt + Shift + S` 快速摘要目前頁面，也可在瀏覽器的擴充功能快捷鍵設定中自訂。
 - ⚡ **多組 API 配置 (Multi-Profile) 快速切換**：
-  - 可儲存任意多組獨立的 API 端點、金鑰、模型與提示詞。
+  - 可儲存多組獨立的 API 端點、金鑰、模型與提示詞；配置數量與內容會受瀏覽器儲存容量限制。
+  - API Key 僅儲存在本機 `chrome.storage.local`；非敏感的配置與介面偏好才會使用 `chrome.storage.sync`。
   - **直接在懸浮視窗 Header 切換**：無需開啟設定頁，在網頁視窗上方下拉選單即可一秒切換不同模型！
   - **工具列 Popup 快捷切換**：點擊瀏覽器工具列圖示即可快速切換當前預設模型。
 - 🌐 **雙協議 (Anthropic & OpenAI) 全面相容**：
@@ -44,9 +45,9 @@
 - 💬 **多輪延伸問答 (Follow-up Q&A)**：
   - 總結完成後可直接在底部輸入框打字進一步探討，內建上下文記憶。
   - 附帶「🔍 深入解析」、「👶 通俗解釋」、「📋 行動建議」、「⚖️ 批判評估」等快捷標籤。
-  - 支援中文輸入法（IME）防誤觸，按 `Enter` 發送、`Shift + Enter` 換行。
+  - 支援中文輸入法（IME）防誤觸，按 `Enter` 換行、`Ctrl + Enter` 發送。
 - 🛡️ **Shadow DOM 隔離技術 & 防出界拖曳**：
-  - 採用 Shadow DOM，完全與宿主網頁 CSS 隔離，不破壞排版、不受網頁樣式污染。
+  - 採用 `closed` Shadow DOM，完全與宿主網頁 CSS 隔離，並降低宿主頁面直接探查浮窗內容的機會；不破壞排版、不受網頁樣式污染。
   - 頂部與底部雙拖曳把手，強制邊界限制 `minTop = 10px`，讓整個視窗保持在 viewport 內。
   - 右下角提供可視化調整把手，可自由調整視窗寬高；視窗會依目前 viewport 限制最小／最大尺寸。
   - 標題列提供最小化與最大化／還原按鈕；最大化可鋪滿目前 viewport，最小化只保留標題列。
@@ -144,7 +145,8 @@
 - 📤 **Export Summaries**: Download the complete summary and follow-up conversation as Markdown (`.md`) or plain text (`.txt`).
 - ⌨️ **Keyboard Shortcut**: Press `Alt + Shift + S` to summarize the current page; the shortcut can be customized in the browser's extension shortcut settings.
 - ⚡ **Multi-Profile API Management & Instant Switching**:
-  - Save unlimited custom API profiles with distinct endpoints, keys, models, and system prompts.
+  - Save multiple custom API profiles with distinct endpoints, keys, models, and system prompts; browser storage limits apply.
+  - API keys are kept only in local `chrome.storage.local`; non-secret settings and UI preferences use `chrome.storage.sync`.
   - **In-Modal Quick Switcher**: Switch models on the fly directly from the floating modal's header dropdown without opening settings!
   - **Toolbar Popup Switcher**: Quickly change the active model from the extension icon popup.
 - 🌐 **Dual Protocol (Anthropic & OpenAI) Compatible**:
@@ -158,9 +160,9 @@
 - 💬 **Multi-Turn Follow-Up Q&A**:
   - Chat seamlessly with the AI about the webpage content with persistent context memory.
   - Built-in prompt chips for one-click exploration: *"In-depth Analysis"*, *"Explain Simply"*, *"Actionable Steps"*, and *"Pros & Cons Evaluation"*.
-  - Full IME guard for Asian languages (`Enter` to send, `Shift + Enter` for new line).
+  - Full IME guard for Asian languages (`Enter` for a new line, `Ctrl + Enter` to send).
 - 🛡️ **Shadow DOM Isolation & Anti-Clipping Dragging**:
-  - 100% CSS isolation via Shadow DOM — immune to host page stylesheets and reset rules.
+  - Uses a `closed` Shadow DOM for CSS isolation and to reduce direct host-page inspection of the floating panel; it remains immune to host page stylesheets and reset rules.
   - Dual drag handles (Top Header + Bottom Status Bar) with strict boundary clamping (`minTop = 10px`) to keep the full window in the viewport.
   - A visible bottom-right resize handle lets you adjust width and height; viewport-aware minimum and maximum sizes prevent clipping.
   - Header controls support minimize and maximize/restore; maximize fills the current viewport while minimize keeps only the title bar.
@@ -249,13 +251,16 @@ To rebuild the standalone `.zip` distribution package:
 ```powershell
 python build_package.py
 ```
-Output will be generated in `dist/aurofact-v1.5.0.zip`.
+Output will be generated in `dist/aurofact-v1.5.1.zip`.
 
 ---
 
 ### 🔒 Privacy Policy
 
-- **100% Client-Side (BYOK)**: All API keys and settings are stored strictly in your local browser storage (`chrome.storage.sync` / `local`).
+- **100% Client-Side (BYOK)**: API keys are stored only in local browser storage (`chrome.storage.local`); non-secret profile settings and UI preferences may use `chrome.storage.sync`.
+- **Endpoint Access**: Custom HTTP/HTTPS endpoints require an explicit browser permission request. HTTP remains available for local or trusted LAN LLM servers, but HTTPS is recommended for remote services.
+- **Redirect Protection**: API requests fail closed when an endpoint responds with a redirect, preventing API-key headers from being forwarded to another origin.
+- **Prompt Injection Boundary**: Webpage text, selected text, and YouTube transcripts are marked as untrusted data in the prompt. A trusted background-layer instruction tells the model to ignore instructions inside that data and never disclose API keys or hidden configuration. This is a defense-in-depth measure, not a replacement for the LLM provider's security boundary; do not paste secrets into webpage content.
 - **Direct Connection**: Requests are sent directly from your browser to your designated LLM provider API endpoint (e.g., MiniMax, OpenAI, Anthropic, Z.AI, or local Ollama). No middleman servers or third-party tracking.
 
 ---
