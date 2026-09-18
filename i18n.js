@@ -846,6 +846,46 @@ Dalam percakapan berikutnya, gabungkan isi asli halaman web dan ringkasan sebelu
     Object.assign(locales[locale].strings, POPUP_STRINGS[locale]);
   });
 
+  const CONTEXT_MENU_STRINGS = Object.freeze({
+    "zh-TW": {
+      contextOpenPanel: "💬 只開啟 AUROFACT 浮窗"
+    },
+    en: {
+      contextOpenPanel: "💬 Open AUROFACT panel"
+    },
+    ja: {
+      contextOpenPanel: "💬 AUROFACT パネルを開く"
+    },
+    ko: {
+      contextOpenPanel: "💬 AUROFACT 패널 열기"
+    },
+    "zh-CN": {
+      contextOpenPanel: "💬 仅打开 AUROFACT 浮窗"
+    },
+    fr: {
+      contextOpenPanel: "💬 Ouvrir le panneau AUROFACT"
+    },
+    es: {
+      contextOpenPanel: "💬 Abrir el panel de AUROFACT"
+    },
+    de: {
+      contextOpenPanel: "💬 AUROFACT-Panel öffnen"
+    },
+    vi: {
+      contextOpenPanel: "💬 Mở bảng AUROFACT"
+    },
+    th: {
+      contextOpenPanel: "💬 เปิดแผง AUROFACT"
+    },
+    id: {
+      contextOpenPanel: "💬 Buka panel AUROFACT"
+    }
+  });
+
+  Object.keys(CONTEXT_MENU_STRINGS).forEach((locale) => {
+    Object.assign(locales[locale].strings, CONTEXT_MENU_STRINGS[locale]);
+  });
+
   const HTTP_ENDPOINT_STRINGS = Object.freeze({
     "zh-TW": "⚠️ 安全性提醒：HTTP 不會加密傳輸，API Key 與摘要內容可能被攔截。若是本機或可信任的區域網路 LLM Server，可以維持 HTTP；遠端服務則建議使用 HTTPS。",
     en: "⚠️ Security notice: HTTP does not encrypt traffic, so your API key and summary content could be intercepted. HTTP is acceptable for a local or trusted LAN LLM server; HTTPS is recommended for remote services.",

@@ -19,6 +19,7 @@
   let currentLocale = "zh-TW";
   let selectionActionContext = null;
   let pendingCustomSelection = false;
+  let standalonePanelOpen = false;
 
   // Position tracking
   let currentLeft = 0;
@@ -52,6 +53,20 @@
   };
   Object.values(FLOATING_TEXT).forEach((localeText) => { localeText.title = "AUROFACT"; });
   const ft = () => FLOATING_TEXT[currentLocale] || FLOATING_TEXT["zh-TW"];
+  const STANDALONE_INPUT_TEXT = Object.freeze({
+    "zh-TW": "輸入問題與 AI 對話... (Enter 換行, Ctrl+Enter 發送)",
+    en: "Ask the AI a question... (Enter for a new line, Ctrl+Enter to send)",
+    "zh-CN": "输入问题与 AI 对话...（Enter 换行，Ctrl+Enter 发送）",
+    fr: "Posez une question à l’IA... (Entrée pour un saut de ligne, Ctrl+Entrée pour envoyer)",
+    es: "Haz una pregunta a la IA... (Enter para nueva línea, Ctrl+Enter para enviar)",
+    de: "Stelle der KI eine Frage... (Enter für eine neue Zeile, Strg+Enter zum Senden)",
+    vi: "Đặt câu hỏi cho AI... (Enter để xuống dòng, Ctrl+Enter để gửi)",
+    th: "ถาม AI... (กด Enter เพื่อขึ้นบรรทัดใหม่, Ctrl+Enter เพื่อส่ง)",
+    id: "Ajukan pertanyaan kepada AI... (Enter untuk baris baru, Ctrl+Enter untuk mengirim)",
+    ja: "AIに質問を入力...（Enterで改行、Ctrl+Enterで送信）",
+    ko: "AI에게 질문 입력... (Enter 줄바꿈, Ctrl+Enter 전송)"
+  });
+  const getStandaloneInputText = () => STANDALONE_INPUT_TEXT[currentLocale] || STANDALONE_INPUT_TEXT["zh-TW"];
   const FLOATING_LABELS = {
     "zh-TW": {
       drag: "按住拖曳視窗（按兩下重設位置）", settings: "外掛設定", minimize: "最小化/還原", maximize: "最大化視窗", restore: "還原視窗大小", close: "關閉 (Esc)", profile: "快速切換 AI 模型/配置", ready: "準備中...", explore: "💡 延伸：", suggestions: ["🔍 深入解析", "👶 通俗解釋", "📋 行動建議", "⚖️ 批判評估"], suggestionQueries: ["請針對本文的核心論點做更進一步的延伸分析與背景說明。", "請用最簡單白話、通俗易懂的例子向我解釋本文重點。", "根據這篇文章的內容，可以提煉出哪些具體可執行的行動建議或步驟？", "這篇文章提出的觀點有哪些潛在的優缺點、限制或正反面爭議？"], reset: "重設位置", resetTitle: "將視窗重設回右下角", retry: "重新總結", retryTitle: "重新總結文章", copy: "複製重點", copyTitle: "複製完整對話記錄", export: "匯出", exportTitle: "匯出完整對話記錄", exportFormat: "選擇匯出格式", copied: "已複製！", copyShort: "複製", exported: "已匯出", answer: "正在回答...", generating: "生成中", completed: "已完成", chars: "字", error: "生成失敗", noKey: "尚未配置 API Key", noKeyMessage: "請先設定此模型的 API Key，即可開始使用。", requestFailed: "請求失敗", unexpected: "發生未預期的錯誤，請稍後重試。", settingsAction: "前往多組 API 設定", retryAction: "重試", resize: "拖曳以調整視窗大小", pageSummary: "📄 網頁重點摘要", aiAnswer: "🤖 AI 解答" },
@@ -167,7 +182,9 @@
     const loading = shadowRoot.getElementById("ws-loading-text");
     if (loading) loading.textContent = t.loading;
     const input = shadowRoot.getElementById("ws-chat-input");
-    if (input && !pendingCustomSelection) input.placeholder = t.input;
+    if (input && !pendingCustomSelection) {
+      input.placeholder = standalonePanelOpen ? getStandaloneInputText() : t.input;
+    }
     const send = shadowRoot.getElementById("ws-btn-send");
     if (send) send.title = isGenerating ? t.stop : t.send;
     shadowRoot.querySelectorAll(".ws-selection-action").forEach((button, index) => button.textContent = t.actions[index]);
@@ -224,7 +241,10 @@
   // Listen for trigger messages from background
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!request || typeof request.action !== "string") return false;
-    if (request.action === "TRIGGER_SUMMARY") {
+    if (request.action === "OPEN_PANEL") {
+      openFloatingPanel();
+      sendResponse({ status: "ready" });
+    } else if (request.action === "TRIGGER_SUMMARY") {
       initiateSummary(request.isSelection, request.selectionText);
       sendResponse({ status: "started" });
     } else if (request.action === "TRIGGER_SELECTION_ACTIONS") {
@@ -338,6 +358,44 @@
     }
     loadProfilesIntoHeader();
     return shadowRoot;
+  }
+
+  // Open a blank chat panel without reading the current webpage or starting a request.
+  function openFloatingPanel() {
+    ensureUI();
+    stopCurrentGeneration();
+    standalonePanelOpen = true;
+    selectionActionContext = null;
+    pendingCustomSelection = false;
+    conversationHistory = [];
+    currentStreamingText = "";
+    lastExtractionContext = null;
+
+    const card = shadowRoot.getElementById("ws-main-card");
+    const title = shadowRoot.getElementById("ws-header-title");
+    const loadingState = shadowRoot.getElementById("ws-loading-state");
+    const chatFeed = shadowRoot.getElementById("ws-chat-feed");
+    const errorBox = shadowRoot.getElementById("ws-error-box");
+    const errorActions = shadowRoot.getElementById("ws-error-actions");
+    const suggestionsBar = shadowRoot.getElementById("ws-suggestions-bar");
+    const selectionActions = shadowRoot.getElementById("ws-selection-actions");
+    const chatInput = shadowRoot.getElementById("ws-chat-input");
+
+    card.classList.remove("ws-minimized");
+    title.textContent = ft().title;
+    loadingState.style.display = "none";
+    chatFeed.style.display = "flex";
+    chatFeed.replaceChildren();
+    errorBox.style.display = "none";
+    errorActions.replaceChildren();
+    suggestionsBar.style.display = "none";
+    selectionActions.style.display = "none";
+    chatInput.value = "";
+    chatInput.style.height = "auto";
+    chatInput.placeholder = getStandaloneInputText();
+    setFloatingStatus("ready");
+    updateInputState(true);
+    clampPositionToBounds();
   }
 
   // Fetch profiles from background to populate the header selector
@@ -1839,6 +1897,7 @@
     if (!text) return;
 
     ensureUI();
+    standalonePanelOpen = false;
     const card = shadowRoot.getElementById("ws-main-card");
     const titleEl = shadowRoot.getElementById("ws-header-title");
     const chatFeed = shadowRoot.getElementById("ws-chat-feed");
@@ -1917,6 +1976,7 @@
   // Start initial summary workflow
   function initiateSummary(isSelection, selectionText) {
     ensureUI();
+    standalonePanelOpen = false;
     selectionActionContext = null;
     pendingCustomSelection = false;
     shadowRoot.getElementById("ws-selection-actions").style.display = "none";

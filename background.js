@@ -410,6 +410,9 @@ function updateContextMenus(locale) {
   chrome.contextMenus.update("summarize_page", {
     title: I18N.translate(normalizedLocale, "contextSummarizePage")
   });
+  chrome.contextMenus.update("open_panel", {
+    title: I18N.translate(normalizedLocale, "contextOpenPanel")
+  });
   chrome.contextMenus.update("summarize_selection", {
     title: I18N.translate(normalizedLocale, "contextSummarizeSelection")
   });
@@ -424,6 +427,12 @@ function recreateContextMenus(locale) {
       chrome.contextMenus.create({
         id: "summarize_page",
         title: I18N.translate(locale, "contextSummarizePage"),
+        contexts: ["page", "frame"]
+      });
+
+      chrome.contextMenus.create({
+        id: "open_panel",
+        title: I18N.translate(locale, "contextOpenPanel"),
         contexts: ["page", "frame"]
       });
 
@@ -485,19 +494,28 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab || !tab.id) return;
 
-  const isSelection = info.menuItemId === "summarize_selection";
-  await sendSummaryToTab(tab.id, isSelection
-    ? {
-        action: "TRIGGER_SELECTION_ACTIONS",
-        selectionText: info.selectionText || "",
-        title: tab.title || "",
-        url: tab.url || ""
-      }
-    : {
-        action: "TRIGGER_SUMMARY",
-        isSelection: false,
-        selectionText: null
-      });
+  if (info.menuItemId === "open_panel") {
+    await sendSummaryToTab(tab.id, { action: "OPEN_PANEL" });
+    return;
+  }
+
+  if (info.menuItemId === "summarize_selection") {
+    await sendSummaryToTab(tab.id, {
+      action: "TRIGGER_SELECTION_ACTIONS",
+      selectionText: info.selectionText || "",
+      title: tab.title || "",
+      url: tab.url || ""
+    });
+    return;
+  }
+
+  if (info.menuItemId !== "summarize_page") return;
+
+  await sendSummaryToTab(tab.id, {
+    action: "TRIGGER_SUMMARY",
+    isSelection: false,
+    selectionText: null
+  });
 });
 
 // Helper: Get active profile and all profiles. Metadata is kept in sync
