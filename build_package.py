@@ -24,6 +24,7 @@ def build_package():
         "profile-schema.js",
         "prompt-safety.js",
         "input-behavior.js",
+        "standalone-context.js",
         "content.js",
         "youtube-utils.js",
         "options.html",

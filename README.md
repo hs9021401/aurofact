@@ -15,7 +15,8 @@
 
 <p align="center">
   <a href="https://github.com/hs9021401/aurofact">GitHub Repository</a> ·
-  <a href="https://github.com/hs9021401/aurofact/releases/latest">Latest Release</a>
+  <a href="https://github.com/hs9021401/aurofact/releases/latest">Latest Release</a> ·
+  <a href="https://github.com/hs9021401/aurofact/blob/main/PRIVACY_POLICY.md">Privacy Policy</a>
 </p>
 
 ---
@@ -25,7 +26,7 @@
 ### ✨ 核心功能特色
 
 - 🚀 **右鍵一鍵總結**：在任何網頁點擊右鍵選單，選擇「📝 總結此網頁重點」即可開始摘要。
-- 💬 **單純開啟浮窗**：在網頁空白處點擊右鍵選擇「💬 只開啟 AUROFACT 浮窗」，不會自動擷取或總結網頁；輸入問題後才會送出訊息。
+- 💬 **單純開啟浮窗**：在網頁空白處點擊右鍵選擇「💬 只開啟 AUROFACT 浮窗」，不會自動擷取或總結網頁；輸入一般問題時維持空白對話，明確提到「此頁面／本文」時才會延遲擷取目前頁面內容。
 - ▶️ **YouTube 轉錄稿摘要 MVP**：在 YouTube 影片頁面先開啟「顯示轉錄稿 (Show transcript)」後，即可直接摘要目前載入的完整轉錄稿；保留時間戳記，沒有可用轉錄稿時會顯示操作提示。
 - 🔍 **AI 選取文字工具**：選取網頁中特定段落後按右鍵選擇「AI 處理選取文字」，可進一步總結、翻譯、解釋、改寫、修正文法或輸入自訂指令。
 - 📤 **摘要匯出**：可將完整摘要與延伸對話下載為 Markdown（`.md`）或純文字（`.txt`）。
@@ -124,7 +125,7 @@
 ### 📖 使用方式
 
 - **方法 A：右鍵選單總結全頁** ➜ 在網頁空白處按右鍵 ➜ 點選 **「📝 總結此網頁重點」**。
-- **方法 B：只開啟浮窗** ➜ 在網頁空白處按右鍵 ➜ 點選 **「💬 只開啟 AUROFACT 浮窗」**；此操作不會自動讀取或總結網頁，輸入問題後才會發送。
+- **方法 B：只開啟浮窗** ➜ 在網頁空白處按右鍵 ➜ 點選 **「💬 只開啟 AUROFACT 浮窗」**；此操作不會自動讀取或總結網頁。一般問題維持空白對話；若輸入「分析此頁面」等明確頁面指令，才會在送出時擷取目前頁面內容。
 - **方法 C：AI 處理選取文字** ➜ 反白選取文字後按右鍵 ➜ 點選 **「📝 AI 處理選取文字」** ➜ 在浮窗中選擇操作。
 - **方法 D：工具列快捷總結** ➜ 點擊瀏覽器工具列外掛圖示 ➜ 點選 **「⚡ 立即總結當前網頁」**。
 - **方法 E：鍵盤快捷總結** ➜ 按下 `Alt + Shift + S` 摘要目前頁面。
@@ -142,7 +143,7 @@
 ### ✨ Key Features
 
 - 🚀 **Right-Click Instant Summary**: Right-click anywhere on a webpage and click **"📝 Summarize Page"** to get structured key points immediately.
-- 💬 **Open Panel Without Summarizing**: Right-click an empty area and choose **"💬 Open AUROFACT panel"** to open a blank chat panel without reading the webpage; a request is sent only after you enter a question.
+- 💬 **Open Panel Without Summarizing**: Right-click an empty area and choose **"💬 Open AUROFACT panel"** to open a blank chat panel without reading the webpage. General questions stay standalone; a request such as “analyze this page” lazily loads the current page only when sent.
 - ▶️ **YouTube Transcript Summary (MVP)**: Open **"Show transcript"** on a YouTube video page before starting a summary. AUROFACT reads the loaded transcript, preserves timestamps, and shows a clear prompt when no transcript is available.
 - 🔍 **AI Selection Tools**: Highlight text, select **"📝 Process selected text with AI"**, then choose summarize, translate, explain, rewrite, grammar correction, or a custom instruction.
 - 📤 **Export Summaries**: Download the complete summary and follow-up conversation as Markdown (`.md`) or plain text (`.txt`).
@@ -240,7 +241,7 @@ The options page lets you manage multiple profiles with separate providers, API 
 ### 📖 How to Use
 
 - **Method A: Summarize Full Webpage** ➜ Right-click anywhere on the page ➜ Click **"📝 Summarize Page"**.
-- **Method B: Open the Panel Only** ➜ Right-click an empty area ➜ Click **"💬 Open AUROFACT panel"**; the webpage is not read or summarized automatically, and only a manually entered question is sent.
+- **Method B: Open the Panel Only** ➜ Right-click an empty area ➜ Click **"💬 Open AUROFACT panel"**; the webpage is not read or summarized automatically. General questions stay standalone; explicit requests such as “analyze this page” load the current page when sent.
 - **Method C: Process Selected Text** ➜ Highlight any text ➜ Right-click ➜ Click **"📝 Process selected text with AI"** ➜ Choose an operation in the floating panel.
 - **Method D: Toolbar Action** ➜ Click the extension icon in the toolbar ➜ Click **"⚡ Summarize Current Tab"**.
 - **Method E: Keyboard Shortcut** ➜ Press `Alt + Shift + S` to summarize the current page.
@@ -255,11 +256,13 @@ To rebuild the standalone `.zip` distribution package:
 ```powershell
 python build_package.py
 ```
-Output will be generated in `dist/aurofact-v1.5.2.zip`.
+Output will be generated in `dist/aurofact-v1.5.3.zip`.
 
 ---
 
 ### 🔒 Privacy Policy
+
+完整隱私政策請參閱 / Read the complete policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md)。
 
 - **100% Client-Side (BYOK)**: API keys are stored only in local browser storage (`chrome.storage.local`); non-secret profile settings and UI preferences may use `chrome.storage.sync`.
 - **Endpoint Access**: Custom HTTP/HTTPS endpoints require an explicit browser permission request. HTTP remains available for local or trusted LAN LLM servers, but HTTPS is recommended for remote services.

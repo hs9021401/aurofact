@@ -3,7 +3,8 @@
 (function () {
   const PROMPT_SAFETY = globalThis.AurofactPromptSafety;
   const INPUT_BEHAVIOR = globalThis.AurofactInputBehavior;
-  if (!PROMPT_SAFETY || !INPUT_BEHAVIOR) return;
+  const STANDALONE_CONTEXT = globalThis.AurofactStandaloneContext;
+  if (!PROMPT_SAFETY || !INPUT_BEHAVIOR || !STANDALONE_CONTEXT) return;
   if (window.__webSummarizerInjected) return;
   window.__webSummarizerInjected = true;
 
@@ -2045,6 +2046,30 @@
     executeStreamRequest();
   }
 
+  // A blank panel stays private until the user explicitly asks about the
+  // current page. At that point, load the page lazily and attach it to the
+  // same user turn so the model cannot answer from an empty context.
+  function attachCurrentPageContextIfRequested(userText) {
+    if (!standalonePanelOpen || lastExtractionContext ||
+        !STANDALONE_CONTEXT.shouldUseCurrentPageContext(userText)) {
+      return userText;
+    }
+
+    const extraction = extractPageContent(false, null);
+    lastExtractionContext = extraction;
+    standalonePanelOpen = false;
+
+    const chatInput = shadowRoot.getElementById("ws-chat-input");
+    if (chatInput) chatInput.placeholder = ft().input;
+
+    return STANDALONE_CONTEXT.buildPageAwarePrompt(
+      userText,
+      extraction,
+      pl(),
+      (value) => PROMPT_SAFETY.wrapUntrustedContent(value)
+    );
+  }
+
   // Handle user follow-up question
   function sendUserFollowUp() {
     const chatInput = shadowRoot.getElementById("ws-chat-input");
@@ -2057,8 +2082,9 @@
     const requestText = pendingCustomSelection && selectionActionContext
       ? `${pl().custom}\n\n${pl().instruction}\n${userText}\n\n${PROMPT_SAFETY.wrapUntrustedContent(`${pl().selected}\n${selectionActionContext.text}`)}`
       : userText;
+    const messageContent = attachCurrentPageContextIfRequested(requestText);
     pendingCustomSelection = false;
-    conversationHistory.push({ role: "user", content: requestText });
+    conversationHistory.push({ role: "user", content: messageContent });
     appendUserBubble(userText);
     executeStreamRequest();
   }
@@ -2197,6 +2223,7 @@
   function appendAssistantBubble() {
     const chatFeed = shadowRoot.getElementById("ws-chat-feed");
     const isFirstTurn = conversationHistory.filter(m => m.role === "assistant").length === 0;
+    const isPageSummary = isFirstTurn && lastExtractionContext && !lastExtractionContext.isSelection;
 
     const row = document.createElement("div");
     row.className = "ws-msg-row";
@@ -2207,7 +2234,7 @@
     const header = document.createElement("div");
     header.className = "ws-bubble-header";
     header.innerHTML = `
-      <span>${escapeHtml(isFirstTurn ? fl().pageSummary : fl().aiAnswer)}</span>
+      <span>${escapeHtml(isPageSummary ? fl().pageSummary : fl().aiAnswer)}</span>
       <button type="button" class="ws-btn-bubble-copy" title="${escapeHtml(fl().copyShort)}">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
         <span>${escapeHtml(fl().copyShort)}</span>
