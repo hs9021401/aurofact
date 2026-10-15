@@ -256,7 +256,7 @@ To rebuild the standalone `.zip` distribution package:
 ```powershell
 python build_package.py
 ```
-Output will be generated in `dist/aurofact-v1.5.3.zip`.
+Output will be generated in `dist/aurofact-v1.5.4.zip`.
 
 ---
 

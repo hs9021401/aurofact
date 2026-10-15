@@ -1080,6 +1080,38 @@
         border-radius: 4px;
       }
 
+      .ws-markdown-content .ws-table-wrapper {
+        max-width: 100%;
+        overflow-x: auto;
+        margin: 8px 0;
+      }
+
+      .ws-markdown-content table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .ws-markdown-content th,
+      .ws-markdown-content td {
+        border: 1px solid #cbd5e1;
+        padding: 5px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .ws-markdown-content th {
+        background: #f1f5f9;
+        color: #0f172a;
+        font-weight: 600;
+      }
+
+      .ws-markdown-content .ws-table-align-center { text-align: center; }
+      .ws-markdown-content .ws-table-align-right { text-align: right; }
+
+      .ws-markdown-content .ws-table-wrapper table { width: max-content; min-width: 100%; }
+
       .ws-markdown-content pre {
         background: #0f172a;
         color: #f8fafc;
@@ -2391,6 +2423,62 @@
     const result = [];
     const listStack = [];
     let listIndentLevels = [];
+    let insideFence = false;
+
+    function splitTableRow(line) {
+      const cells = [];
+      let cell = "";
+      let inCode = false;
+      let hasPipe = false;
+
+      for (let index = 0; index < line.length; index++) {
+        if (line.startsWith("<code>", index)) {
+          inCode = true;
+          cell += "<code>";
+          index += 5;
+          continue;
+        }
+        if (line.startsWith("</code>", index)) {
+          inCode = false;
+          cell += "</code>";
+          index += 6;
+          continue;
+        }
+        if (line[index] === "|" && !inCode) {
+          let backslashes = 0;
+          for (let previous = index - 1; previous >= 0 && line[previous] === "\\"; previous--) backslashes++;
+          if (backslashes % 2 === 0) {
+            hasPipe = true;
+            cells.push(cell.trim());
+            cell = "";
+            continue;
+          }
+        }
+        cell += line[index];
+      }
+      cells.push(cell.trim());
+
+      if (line.trimStart().startsWith("|") && cells[0] === "") cells.shift();
+      if (line.trimEnd().endsWith("|") && cells[cells.length - 1] === "") cells.pop();
+      return { cells, hasPipe };
+    }
+
+    function renderTableCell(cell, tag, alignment = "left") {
+      const renderedCell = cell.replace(/(<code>.*?<\/code>)|\\\|/g, (match, code) => code || "|");
+      return `<${tag} class="ws-table-align-${alignment}">${renderedCell}</${tag}>`;
+    }
+
+    function isTableSeparator(cells) {
+      return cells.length > 0 && cells.every(cell => /^:?-{3,}:?$/.test(cell));
+    }
+
+    function getTableAlignment(separatorCell) {
+      const left = separatorCell.startsWith(":");
+      const right = separatorCell.endsWith(":");
+      if (left && right) return "center";
+      if (right) return "right";
+      return "left";
+    }
 
     function closeLists(targetDepth = 0) {
       while (listStack.length > targetDepth) {
@@ -2430,6 +2518,36 @@
         listIndentLevels = [];
         result.push(`<pre><code>${codeBlocks[Number(codeBlockMatch[1])]}</code></pre>`);
         continue;
+      }
+
+      if (trimmed.startsWith("```")) insideFence = !insideFence;
+
+      if (!insideFence && !trimmed.startsWith("```") && i + 1 < lines.length) {
+        const header = splitTableRow(rawLine);
+        const separator = splitTableRow(lines[i + 1]);
+        if (header.hasPipe && separator.hasPipe && isTableSeparator(separator.cells) && header.cells.length === separator.cells.length) {
+          closeLists();
+          listIndentLevels = [];
+          const alignments = separator.cells.map(getTableAlignment);
+          result.push('<div class="ws-table-wrapper"><table><thead><tr>');
+          result.push(header.cells.map((cell, index) => renderTableCell(cell, "th", alignments[index])).join(""));
+          result.push("</tr></thead><tbody>");
+          i++;
+
+          while (i + 1 < lines.length) {
+            const nextLine = lines[i + 1];
+            if (nextLine.trim() === "") break;
+            const row = splitTableRow(nextLine);
+            if (!row.hasPipe) break;
+            const normalizedCells = row.cells.slice(0, header.cells.length);
+            while (normalizedCells.length < header.cells.length) normalizedCells.push("");
+            result.push(`<tr>${normalizedCells.map((cell, index) => renderTableCell(cell, "td", alignments[index])).join("")}</tr>`);
+            i++;
+          }
+
+          result.push("</tbody></table></div>");
+          continue;
+        }
       }
 
       const listMatch = rawLine.match(/^(\s*)([\*\-\+]|\d+[\.\)])\s+(.*)$/);
