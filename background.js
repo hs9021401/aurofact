@@ -1,11 +1,18 @@
 // background.js - AUROFACT service worker with multi-profile API support
 
-importScripts("i18n.js", "profile-view.js", "profile-schema.js", "prompt-safety.js");
+importScripts(
+  "i18n.js",
+  "profile-view.js",
+  "profile-schema.js",
+  "prompt-safety.js",
+  "model-request-policy.js"
+);
 
 const I18N = globalThis.WebSummarizerI18n;
 const PROFILE_VIEW = globalThis.AurofactProfileView;
 const PROFILE_SCHEMA = globalThis.AurofactProfileSchema;
 const PROMPT_SAFETY = globalThis.AurofactPromptSafety;
+const MODEL_REQUEST_POLICY = globalThis.AurofactModelRequestPolicy;
 const DEFAULT_SYSTEM_PROMPT = I18N.getPrompt(I18N.defaultLocale);
 
 const DEFAULT_PROFILES = [
@@ -340,7 +347,11 @@ function postPortMessage(port, payload) {
 
 function getProfileErrorResponse(error, fallbackCode = "PROFILE_LOAD_FAILED") {
   const code = error?.code || fallbackCode;
-  return { success: false, error: code };
+  return {
+    success: false,
+    error: code,
+    ...(error?.status ? { status: error.status } : {})
+  };
 }
 
 function getEndpointPermissionPattern(apiUrl) {
@@ -521,6 +532,17 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // Helper: Get active profile and all profiles. Metadata is kept in sync
 // storage, while API keys are hydrated from local storage only.
 let profileConfigPromise = null;
+let profileStorageQueue = Promise.resolve();
+
+// chrome.storage has no transaction spanning sync and local. Serialize every
+// profile read that may migrate data and every profile write so overlapping
+// requests cannot interleave snapshots. A rejected operation does not poison
+// the queue, and callers still receive its original failure.
+function runProfileStorageOperation(operation) {
+  const result = profileStorageQueue.then(operation, operation);
+  profileStorageQueue = result.catch(() => {});
+  return result;
+}
 
 async function loadProfileConfig() {
   const [syncItems, localItems] = await Promise.all([
@@ -630,34 +652,90 @@ async function loadProfileConfig() {
 
 function getProfileConfig() {
   if (!profileConfigPromise) {
-    profileConfigPromise = loadProfileConfig().finally(() => {
+    profileConfigPromise = runProfileStorageOperation(loadProfileConfig).finally(() => {
       profileConfigPromise = null;
     });
   }
   return profileConfigPromise;
 }
 
-async function saveProfileConfig(rawProfiles, activeProfileId, requestedLocale) {
-  const prepared = PROFILE_SCHEMA.prepareProfilesForSave(rawProfiles, activeProfileId);
-  const uiLocale = I18N.normalizeLocale(requestedLocale);
+function saveProfileConfig(rawProfiles, activeProfileId, requestedLocale) {
+  return runProfileStorageOperation(async () => {
+    const prepared = PROFILE_SCHEMA.prepareProfilesForSave(rawProfiles, activeProfileId);
+    const uiLocale = I18N.normalizeLocale(requestedLocale);
+    const previousLocalItems = await storageGet(chrome.storage.local, PROFILE_LOCAL_KEYS);
+    const hadPreviousKeyMap = hasOwn(previousLocalItems, "profileApiKeys");
+    const previousKeyMap = previousLocalItems.profileApiKeys;
 
-  await storageSet(chrome.storage.local, { profileApiKeys: prepared.apiKeys });
-  await storageSet(chrome.storage.sync, {
-    profiles: prepared.syncProfiles,
-    activeProfileId: prepared.activeProfileId,
-    uiLocale,
-    providerDefaultsVersion: CURRENT_PROVIDER_DEFAULTS_VERSION,
-    profileSchemaVersion: PROFILE_SCHEMA.CURRENT_PROFILE_SCHEMA_VERSION
+    const restorePreviousLocalKeyMap = async () => {
+      if (hadPreviousKeyMap) {
+        await storageSet(chrome.storage.local, { profileApiKeys: previousKeyMap });
+      } else {
+        await storageRemove(chrome.storage.local, "profileApiKeys");
+      }
+    };
+
+    try {
+      await storageSet(chrome.storage.local, { profileApiKeys: prepared.apiKeys });
+    } catch (localWriteError) {
+      try {
+        await restorePreviousLocalKeyMap();
+      } catch (recoveryError) {
+        // A local write can fail after applying; report partial if restoration
+        // also fails, without returning storage details that could expose data.
+        const error = PROFILE_SCHEMA.makeError("PROFILE_SAVE_PARTIAL", "Profile save partially completed; local key recovery could not be confirmed.");
+        error.status = "PARTIAL";
+        throw error;
+      }
+      throw localWriteError;
+    }
+
+    try {
+      await storageSet(chrome.storage.sync, {
+        profiles: prepared.syncProfiles,
+        activeProfileId: prepared.activeProfileId,
+        uiLocale,
+        providerDefaultsVersion: CURRENT_PROVIDER_DEFAULTS_VERSION,
+        profileSchemaVersion: PROFILE_SCHEMA.CURRENT_PROFILE_SCHEMA_VERSION
+      });
+    } catch (syncWriteError) {
+      try {
+        await restorePreviousLocalKeyMap();
+      } catch (recoveryError) {
+        // The sync outcome is uncertain and local recovery also could not be
+        // confirmed. Do not expose storage errors or values that may contain
+        // profile secrets.
+        const error = PROFILE_SCHEMA.makeError("PROFILE_SAVE_PARTIAL", "Profile save partially completed; sync and local storage outcomes are uncertain.");
+        error.status = "PARTIAL";
+        throw error;
+      }
+      // chrome.storage may report an error after sync data was applied. The
+      // local map was restored, but the cross-area save outcome is still
+      // uncertain, so always tell the caller that the save may be partial.
+      const error = PROFILE_SCHEMA.makeError("PROFILE_SAVE_PARTIAL", "Profile save partially completed; sync storage outcome is uncertain.");
+      error.status = "PARTIAL";
+      throw error;
+    }
+
+    let warning;
+    try {
+      await storageRemove(chrome.storage.sync, LEGACY_SYNC_KEYS);
+    } catch (cleanupError) {
+      // Metadata and local keys are committed. Legacy cleanup is best effort;
+      // report the committed save with a warning rather than a false failure.
+      warning = "LEGACY_CLEANUP_FAILED";
+      console.warn("Profile settings saved, but legacy sync-key cleanup failed.");
+    }
+
+    const activeProfile = prepared.profiles.find((profile) => profile.id === prepared.activeProfileId);
+    return {
+      profiles: prepared.profiles,
+      activeProfileId: prepared.activeProfileId,
+      activeProfile,
+      uiLocale,
+      warning
+    };
   });
-  await storageRemove(chrome.storage.sync, LEGACY_SYNC_KEYS);
-
-  const activeProfile = prepared.profiles.find((profile) => profile.id === prepared.activeProfileId);
-  return {
-    profiles: prepared.profiles,
-    activeProfileId: prepared.activeProfileId,
-    activeProfile,
-    uiLocale
-  };
 }
 
 // Handle long-lived streaming connection from content script
@@ -761,7 +839,7 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
 
     requestBody = {
       model: modelName,
-      max_tokens: maxTokens,
+      ...MODEL_REQUEST_POLICY.getAnthropicRequestOptions(modelName, maxTokens),
       stream: true,
       system: sysPrompt,
       messages: cleanMessages
@@ -797,12 +875,18 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
     }, signal);
 
     if (!response.ok) {
-      let errorDetail = "";
+      let responseText = "";
       try {
-        const errorJson = await response.json();
+        responseText = await response.text();
+      } catch (e) {
+        responseText = "";
+      }
+      let errorDetail = responseText;
+      try {
+        const errorJson = JSON.parse(responseText);
         errorDetail = errorJson.error?.message || errorJson.message || JSON.stringify(errorJson);
       } catch (e) {
-        errorDetail = await response.text();
+        // Keep the raw response text when the server returned non-JSON.
       }
       errorDetail = String(errorDetail || "").slice(0, 4000);
 
@@ -822,6 +906,7 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
     let streamedChars = 0;
+    let stopReason = null;
 
     const emitChunk = (text) => {
       if (typeof text !== "string" || !text) return;
@@ -833,6 +918,33 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
       postPortMessage(port, { type: "CHUNK", text: chunk });
       if (chunk.length < text.length) {
         throw PROFILE_SCHEMA.makeError("STREAM_LIMIT_EXCEEDED", "The response is too large.");
+      }
+    };
+
+    const processSseData = (dataStr) => {
+      if (dataStr === "[DONE]") return;
+
+      let data;
+      try {
+        data = JSON.parse(dataStr);
+      } catch (jsonErr) {
+        return;
+      }
+      if (!data || typeof data !== "object") return;
+
+      if (data.type === "message_delta" && data.delta && data.delta.stop_reason) {
+        stopReason = data.delta.stop_reason;
+      }
+      if (data.choices && data.choices[0]?.finish_reason) {
+        stopReason = data.choices[0].finish_reason;
+      }
+
+      if (data.type === "content_block_delta" && data.delta && data.delta.text) {
+        emitChunk(data.delta.text);
+      } else if (data.choices && data.choices[0]?.delta?.content) {
+        emitChunk(data.choices[0].delta.content);
+      } else if (data.text) {
+        emitChunk(data.text);
       }
     };
 
@@ -851,30 +963,38 @@ async function streamChat(port, signal, rawMessages, requestedProfileId) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith(":")) continue;
 
-        if (trimmed.startsWith("data: ")) {
-          const dataStr = trimmed.substring(6).trim();
-          if (dataStr === "[DONE]") continue;
-
-          try {
-            const data = JSON.parse(dataStr);
-            
-            // Anthropic stream
-            if (data.type === "content_block_delta" && data.delta && data.delta.text) {
-              emitChunk(data.delta.text);
-            } 
-            // OpenAI stream
-            else if (data.choices && data.choices[0]?.delta?.content) {
-              emitChunk(data.choices[0].delta.content);
-            }
-            // Direct text fallback
-            else if (data.text) {
-              emitChunk(data.text);
-            }
-          } catch (jsonErr) {
-            // Non-json SSE data line
-          }
+        if (trimmed.startsWith("data:")) {
+          processSseData(trimmed.substring(5).trim());
         }
       }
+    }
+
+    buffer += decoder.decode();
+    if (buffer.trim()) {
+      const trimmed = buffer.trim();
+      if (trimmed.startsWith("data:")) {
+        processSseData(trimmed.substring(5).trim());
+      }
+    }
+
+    if (streamedChars === 0) {
+      if (stopReason === "max_tokens") {
+        const tokenGuidance = maxTokens >= 8192
+          ? "目前最大 Token 數已達 8192 上限，請縮短輸入或更換模型後重試。"
+          : "請提高最大 Token 數、縮短輸入或更換模型後重試。";
+        postPortMessage(port, {
+          type: "ERROR",
+          errorCode: "MAX_TOKENS_NO_CONTENT",
+          message: `API 已達 max_tokens 上限但沒有產生正文，可能是 thinking 耗盡 token；${tokenGuidance}`
+        });
+      } else {
+        postPortMessage(port, {
+          type: "ERROR",
+          errorCode: "EMPTY_RESPONSE",
+          message: "API 結束了請求，但沒有提供任何文字回覆。"
+        });
+      }
+      return;
     }
 
     postPortMessage(port, { type: "DONE" });
@@ -928,8 +1048,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (action === "SET_ACTIVE_PROFILE") {
-    Promise.resolve().then(async () => {
-      const data = await getProfileConfig();
+    runProfileStorageOperation(async () => {
+      const data = await loadProfileConfig();
       if (typeof request.profileId !== "string" ||
           !data.profiles.some((profile) => profile.id === request.profileId)) {
         throw PROFILE_SCHEMA.makeError("INVALID_PROFILE_DATA", "Unknown active profile.");
@@ -948,7 +1068,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     saveProfileConfig(request.profiles, request.activeProfileId, request.uiLocale)
-      .then(() => sendResponse({ success: true }))
+      .then((result) => sendResponse({
+        success: true,
+        ...(result.warning ? { warning: result.warning } : {})
+      }))
       .catch((error) => sendResponse(getProfileErrorResponse(error, "PROFILE_SAVE_FAILED")));
     return true;
   }
@@ -980,7 +1103,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     const uiLocale = I18N.normalizeLocale(request.locale);
-    storageSet(chrome.storage.sync, { uiLocale })
+    runProfileStorageOperation(() => storageSet(chrome.storage.sync, { uiLocale }))
       .then(() => {
         updateContextMenus(uiLocale);
         sendResponse({ success: true, uiLocale });
@@ -1049,12 +1172,18 @@ async function testProfileConnection(profile, requestedLocale) {
     const latency = Date.now() - startTime;
 
     if (!response.ok) {
-      let detail = "";
+      let responseText = "";
       try {
-        const errJson = await response.json();
+        responseText = await response.text();
+      } catch (e) {
+        responseText = "";
+      }
+      let detail = responseText;
+      try {
+        const errJson = JSON.parse(responseText);
         detail = errJson.error?.message || errJson.message || JSON.stringify(errJson);
       } catch (e) {
-        detail = await response.text();
+        // Keep the raw body when an endpoint returns a non-JSON error.
       }
       detail = String(detail || "").slice(0, 4000);
       return {
@@ -1069,20 +1198,23 @@ async function testProfileConnection(profile, requestedLocale) {
 
     const data = await response.json();
     let replyText = "";
-    
-    if (data.content && Array.isArray(data.content) && data.content[0]?.text) {
-      replyText = data.content[0].text;
-    } else if (data.choices && Array.isArray(data.choices) && data.choices[0]?.message?.content) {
+    if (Array.isArray(data.content)) {
+      replyText = data.content
+        .filter((block) => block?.type === "text" && typeof block.text === "string")
+        .map((block) => block.text)
+        .join("");
+    } else if (typeof data.choices?.[0]?.message?.content === "string") {
       replyText = data.choices[0].message.content;
-    } else {
-      replyText = "OK (響應成功)";
     }
+    replyText = replyText.trim();
 
     return {
       success: true,
+      connected: true,
+      hasResponseText: Boolean(replyText),
       latency: latency,
       model: data.model || modelName,
-      reply: replyText.trim().slice(0, 1000)
+      reply: replyText.slice(0, 1000)
     };
   } catch (err) {
     return {

@@ -9,6 +9,7 @@
   window.__webSummarizerInjected = true;
 
   let currentPort = null;
+  let currentStreamRequestId = 0;
   let shadowRoot = null;
   let hostElement = null;
   let isGenerating = false;
@@ -1846,6 +1847,8 @@
 
   // Stop active generation
   function stopCurrentGeneration() {
+    // Invalidate this request before disconnecting so its onDisconnect callback is ignored.
+    currentStreamRequestId++;
     if (currentPort) {
       try {
         currentPort.postMessage({ action: "ABORT_STREAM" });
@@ -2172,6 +2175,7 @@
   // Core stream request runner
   function executeStreamRequest() {
     stopCurrentGeneration();
+    const requestId = ++currentStreamRequestId;
     isGenerating = true;
     currentStreamingText = "";
     updateInputState(false);
@@ -2184,9 +2188,12 @@
     const assistantBubbleContent = appendAssistantBubble();
 
     try {
-      currentPort = chrome.runtime.connect({ name: "summarize-stream" });
+      const port = chrome.runtime.connect({ name: "summarize-stream" });
+      currentPort = port;
 
-      currentPort.onMessage.addListener((msg) => {
+      port.onMessage.addListener((msg) => {
+        if (requestId !== currentStreamRequestId || currentPort !== port || !isGenerating) return;
+
         if (msg.type === "START") {
           loadingState.style.display = "none";
           chatFeed.style.display = "flex";
@@ -2202,39 +2209,57 @@
           setFloatingStatus("completed", { count: currentStreamingText.length });
           suggestionsBar.style.display = "flex";
           updateInputState(true);
-          if (currentPort) {
-            currentPort.disconnect();
-            currentPort = null;
-          }
+          currentPort = null;
+          port.disconnect();
         } else if (msg.type === "ERROR") {
           isGenerating = false;
           showErrorState(msg.errorCode, msg.message);
           updateInputState(true);
-          if (currentPort) {
-            currentPort.disconnect();
-            currentPort = null;
-          }
+          currentPort = null;
+          port.disconnect();
         }
       });
 
-      currentPort.onDisconnect.addListener(() => {
-        if (isGenerating) {
+      port.onDisconnect.addListener(() => {
+        if (requestId === currentStreamRequestId && currentPort === port && isGenerating) {
           isGenerating = false;
-          finalizeAssistantStreaming(assistantBubbleContent);
-          suggestionsBar.style.display = "flex";
+          currentPort = null;
+          if (currentStreamingText) {
+            finalizeAssistantStreaming(assistantBubbleContent, false);
+          } else {
+            assistantBubbleContent.closest(".ws-msg-row")?.remove();
+          }
+          showErrorState("CONNECTION_FAILED");
           updateInputState(true);
         }
       });
 
       // Pass currently selected profile ID
-      currentPort.postMessage({
+      port.postMessage({
         action: "START_STREAM_CHAT",
         messages: conversationHistory,
         profileId: currentActiveProfileId
       });
     } catch (err) {
-      showErrorState("CONNECTION_FAILED", `無法建立通訊: ${err.message}`);
-      updateInputState(true);
+      if (requestId === currentStreamRequestId) {
+        // Invalidate callbacks before closing a port whose initial post failed.
+        currentStreamRequestId++;
+        const failedPort = currentPort;
+        currentPort = null;
+        isGenerating = false;
+        if (failedPort) {
+          try {
+            failedPort.disconnect();
+          } catch (disconnectError) {}
+        }
+        if (currentStreamingText) {
+          finalizeAssistantStreaming(assistantBubbleContent, false);
+        } else {
+          assistantBubbleContent.closest(".ws-msg-row")?.remove();
+        }
+        showErrorState("CONNECTION_FAILED", `無法建立通訊: ${err.message}`);
+        updateInputState(true);
+      }
     }
   }
 
@@ -2306,11 +2331,11 @@
   }
 
   // Finalize assistant streaming
-  function finalizeAssistantStreaming(contentEl) {
+  function finalizeAssistantStreaming(contentEl, saveToHistory = true) {
     const shouldFollow = shouldAutoScroll();
     if (contentEl && currentStreamingText) {
       contentEl.innerHTML = parseMarkdown(currentStreamingText);
-      conversationHistory.push({ role: "assistant", content: currentStreamingText });
+      if (saveToHistory) conversationHistory.push({ role: "assistant", content: currentStreamingText });
     }
     scrollToBottom(shouldFollow);
   }

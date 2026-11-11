@@ -23,6 +23,7 @@ def build_package():
         "profile-view.js",
         "profile-schema.js",
         "prompt-safety.js",
+        "model-request-policy.js",
         "input-behavior.js",
         "standalone-context.js",
         "content.js",

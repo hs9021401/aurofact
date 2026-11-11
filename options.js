@@ -12,6 +12,12 @@ if (!PROFILE_VIEW) {
   throw new Error("Shared profile helpers were not loaded.");
 }
 
+const MODEL_REQUEST_POLICY = globalThis.AurofactModelRequestPolicy;
+
+if (!MODEL_REQUEST_POLICY) {
+  throw new Error("Shared model request policy was not loaded.");
+}
+
 const TEMPLATES = {
   minimax: {
     apiFormat: "anthropic",
@@ -152,6 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
       PROFILE_LOAD_FAILED: "profileLoadFailed",
       INVALID_PROFILE_DATA: "invalidProfileData",
       PROFILE_SAVE_FAILED: "storageSaveFailed",
+      PROFILE_SAVE_PARTIAL: "profileSavePartial",
       STORAGE_QUOTA_EXCEEDED: "storageQuotaExceeded",
       INVALID_ENDPOINT: "invalidEndpoint",
       ENDPOINT_PERMISSION_REQUIRED: "endpointPermissionRequired",
@@ -397,7 +404,9 @@ document.addEventListener("DOMContentLoaded", () => {
     profFormatSelect.value = p.apiFormat || "anthropic";
     profUrlInput.value = p.apiUrl || "";
     profKeyInput.value = p.apiKey || "";
+    setApiKeyVisibility(false);
     profModelInput.value = p.model || "";
+    updateMaxTokensMinimum(profModelInput.value, profFormatSelect.value);
     if (!p.systemPrompt) {
       p.systemPrompt = getDefaultSystemPrompt();
       p.systemPromptMode = "default";
@@ -405,16 +414,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     profPromptInput.value = p.systemPrompt;
     
-    profMaxTokensRange.value = p.maxTokens || 2048;
+    const minMaxTokens = parseInt(profMaxTokensRange.min, 10) || 512;
+    profMaxTokensRange.value = Math.max(Number(p.maxTokens) || 2048, minMaxTokens);
     valMaxTokens.textContent = profMaxTokensRange.value;
 
-    profTemperatureRange.value = p.temperature || 0.5;
+    profTemperatureRange.value = p.temperature ?? 0.5;
     valTemperature.textContent = profTemperatureRange.value;
 
     updateEndpointWarning(p.apiUrl);
     updateKeyStatus(p.apiKey, p.apiUrl);
     updateHelpLink(p.apiUrl);
     testResultBox.style.display = "none";
+  }
+
+  function updateMaxTokensMinimum(modelName, apiFormat) {
+    const minimum = MODEL_REQUEST_POLICY.getMinimumMaxTokens(modelName, apiFormat);
+    profMaxTokensRange.min = String(minimum);
+    const currentValue = Number(profMaxTokensRange.value);
+    if (Number.isFinite(currentValue) && currentValue < minimum) {
+      profMaxTokensRange.value = String(minimum);
+    }
+    valMaxTokens.textContent = profMaxTokensRange.value;
   }
 
   // Save current editor inputs into memory array
@@ -456,6 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const p = profiles.find((item) => item.id === selectedProfileId);
     if (p) {
       p.model = profModelInput.value;
+      updateMaxTokensMinimum(p.model, profFormatSelect.value);
       renderProfileList();
     }
   });
@@ -464,6 +485,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const p = profiles.find((item) => item.id === selectedProfileId);
     if (p) {
       p.apiFormat = profFormatSelect.value;
+      updateMaxTokensMinimum(profModelInput.value, p.apiFormat);
       renderProfileList();
     }
   });
@@ -486,25 +508,24 @@ document.addEventListener("DOMContentLoaded", () => {
     valTemperature.textContent = profTemperatureRange.value;
   });
 
-  // Toggle Password
-  btnToggleKey.addEventListener("click", () => {
-    if (profKeyInput.type === "password") {
-      profKeyInput.type = "text";
-      btnToggleKey.innerHTML = `
+  function setApiKeyVisibility(isVisible) {
+    profKeyInput.type = isVisible ? "text" : "password";
+    btnToggleKey.innerHTML = isVisible ? `
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
           <line x1="1" y1="1" x2="23" y2="23"></line>
         </svg>
-      `;
-    } else {
-      profKeyInput.type = "password";
-      btnToggleKey.innerHTML = `
+      ` : `
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
           <circle cx="12" cy="12" r="3"></circle>
         </svg>
       `;
-    }
+  }
+
+  // Toggle Password
+  btnToggleKey.addEventListener("click", () => {
+    setApiKeyVisibility(profKeyInput.type === "password");
   });
 
   function updateKeyStatus(key, url) {
@@ -699,13 +720,16 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (response && response.success) {
+        const hasResponseText = response.hasResponseText !== false &&
+          typeof response.reply === "string" && response.reply.trim().length > 0;
+        const replyText = hasResponseText ? response.reply : t("testNoResponseText");
         showTestResult(
           "success",
           `<strong>${escapeHtml(t("testSuccessHeading", { name: currentProfileName }))}</strong><br>
            • ${escapeHtml(t("testProtocol"))}：${escapeHtml((currentP.apiFormat || "").toUpperCase())}<br>
            • ${escapeHtml(t("testModel"))}：${escapeHtml(response.model || currentP.model || "") }<br>
            • ${escapeHtml(t("testLatency"))}：${escapeHtml(String(response.latency))} ms<br>
-           • ${escapeHtml(t("testReply"))}：${escapeHtml(response.reply || t("testReplyFallback"))}`
+           • ${escapeHtml(t("testReply"))}：${escapeHtml(replyText)}`
         );
       } else {
         showTestResult(
@@ -734,27 +758,51 @@ document.addEventListener("DOMContentLoaded", () => {
     btnSaveAll.disabled = true;
     try {
       const endpointPermission = await requestEndpointPermissions(profiles);
-      const response = await sendRuntimeMessage({
-        action: "SAVE_ALL_PROFILES",
-        profiles,
-        activeProfileId,
-        uiLocale: currentLocale
-      });
+      let response;
+      try {
+        response = await sendRuntimeMessage({
+          action: "SAVE_ALL_PROFILES",
+          profiles,
+          activeProfileId,
+          uiLocale: currentLocale
+        });
+      } catch (error) {
+        showToast(t("storageSaveStatusUnknown"));
+        return;
+      }
 
       if (!response?.success) {
         showToast(responseErrorMessage(response));
         return;
       }
 
+      let uiRefreshFailed = false;
+      try {
+        renderProfileList();
+        loadProfileToEditor(selectedProfileId);
+      } catch (error) {
+        uiRefreshFailed = true;
+        console.error("Profiles were saved, but the options UI could not refresh.", error);
+      }
+
+      const saveWarnings = [];
+      if (response.warning === "LEGACY_CLEANUP_FAILED") {
+        saveWarnings.push(t("legacyCleanupFailed"));
+      }
+      if (uiRefreshFailed) {
+        saveWarnings.push(t("toastSavedButUiRefreshFailed"));
+      }
       if (!endpointPermission.granted) {
-        showToast(endpointPermission.invalid
+        saveWarnings.push(endpointPermission.invalid
           ? t("invalidEndpoint")
           : t("toastSavedWithoutEndpointPermission"));
+      }
+
+      if (saveWarnings.length > 0) {
+        showToast(saveWarnings.join(" "));
       } else {
         showToast(t("toastSaved"));
       }
-      renderProfileList();
-      loadProfileToEditor(selectedProfileId);
     } catch (error) {
       showToast(t("storageSaveFailed"));
     } finally {
