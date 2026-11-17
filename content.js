@@ -4,7 +4,8 @@
   const PROMPT_SAFETY = globalThis.AurofactPromptSafety;
   const INPUT_BEHAVIOR = globalThis.AurofactInputBehavior;
   const STANDALONE_CONTEXT = globalThis.AurofactStandaloneContext;
-  if (!PROMPT_SAFETY || !INPUT_BEHAVIOR || !STANDALONE_CONTEXT) return;
+  const REQUEST_LIMITS = globalThis.AurofactRequestLimits;
+  if (!PROMPT_SAFETY || !INPUT_BEHAVIOR || !STANDALONE_CONTEXT || !REQUEST_LIMITS) return;
   if (window.__webSummarizerInjected) return;
   window.__webSummarizerInjected = true;
 
@@ -1928,6 +1929,14 @@
   };
   const pl = () => PROMPT_LABELS[currentLocale] || PROMPT_LABELS["zh-TW"];
 
+  function boundedUntrustedPrompt(prefix, data) {
+    return REQUEST_LIMITS.buildBoundedUntrustedPrompt(
+      prefix,
+      data,
+      (value) => PROMPT_SAFETY.wrapUntrustedContent(value)
+    );
+  }
+
   function openSelectionActions(selectionText, title, url) {
     const text = (selectionText || "").trim();
     if (!text) return;
@@ -1989,10 +1998,12 @@
 
     stopCurrentGeneration();
     const selectedData = `${pl().source}${context.title}\n${pl().selected}\n${context.text}`;
-    conversationHistory = [{
-      role: "user",
-      content: `${operationPrompt}\n\n${PROMPT_SAFETY.wrapUntrustedContent(selectedData)}`
-    }];
+    const bounded = boundedUntrustedPrompt(`${operationPrompt}\n\n`, selectedData);
+    if (!bounded) {
+      showErrorState("MESSAGE_TOO_LARGE");
+      return;
+    }
+    conversationHistory = [{ role: "user", content: bounded.content }];
 
     const loadingState = shadowRoot.getElementById("ws-loading-state");
     const chatFeed = shadowRoot.getElementById("ws-chat-feed");
@@ -2058,11 +2069,16 @@
           `${extraction.isYouTube ? ytpl().transcript : labels.pageBody}`,
           extraction.text
         ].join("\n");
-    const promptContent = extraction.isSelection
-      ? `${labels.selectionSummary}:\n\n${PROMPT_SAFETY.wrapUntrustedContent(pageData)}`
-      : `${extraction.isYouTube ? ytpl().summary : labels.pageSummary}\n\n${PROMPT_SAFETY.wrapUntrustedContent(pageData)}`;
-
-    conversationHistory.push({ role: "user", content: promptContent });
+    const promptPrefix = extraction.isSelection
+      ? `${labels.selectionSummary}:\n\n`
+      : `${extraction.isYouTube ? ytpl().summary : labels.pageSummary}\n\n`;
+    const bounded = boundedUntrustedPrompt(promptPrefix, pageData);
+    if (!bounded) {
+      showErrorState("MESSAGE_TOO_LARGE");
+      updateInputState(true);
+      return;
+    }
+    conversationHistory.push({ role: "user", content: bounded.content });
 
     const loadingState = shadowRoot.getElementById("ws-loading-state");
     const chatFeed = shadowRoot.getElementById("ws-chat-feed");
@@ -2091,18 +2107,20 @@
     }
 
     const extraction = extractPageContent(false, null);
-    lastExtractionContext = extraction;
-    standalonePanelOpen = false;
-
-    const chatInput = shadowRoot.getElementById("ws-chat-input");
-    if (chatInput) chatInput.placeholder = ft().input;
-
-    return STANDALONE_CONTEXT.buildPageAwarePrompt(
+    const boundedPrompt = STANDALONE_CONTEXT.buildPageAwarePrompt(
       userText,
       extraction,
       pl(),
-      (value) => PROMPT_SAFETY.wrapUntrustedContent(value)
+      (value) => PROMPT_SAFETY.wrapUntrustedContent(value),
+      (prefix, data) => boundedUntrustedPrompt(prefix, data)
     );
+    if (boundedPrompt === null) return null;
+
+    lastExtractionContext = extraction;
+    standalonePanelOpen = false;
+    const chatInput = shadowRoot.getElementById("ws-chat-input");
+    if (chatInput) chatInput.placeholder = ft().input;
+    return boundedPrompt;
   }
 
   // Handle user follow-up question
@@ -2111,13 +2129,33 @@
     const userText = chatInput.value.trim();
     if (!userText || isGenerating) return;
 
+    let requestText = userText;
+    if (pendingCustomSelection && selectionActionContext) {
+      const bounded = boundedUntrustedPrompt(
+        `${pl().custom}\n\n${pl().instruction}\n${userText}\n\n`,
+        `${pl().selected}\n${selectionActionContext.text}`
+      );
+      if (!bounded) {
+        showErrorState("MESSAGE_TOO_LARGE");
+        return;
+      }
+      requestText = bounded.content;
+    }
+    const messageContent = attachCurrentPageContextIfRequested(requestText);
+    if (messageContent === null) {
+      showErrorState("MESSAGE_TOO_LARGE");
+      return;
+    }
+    const limitError = REQUEST_LIMITS.getConversationLimitError([
+      ...conversationHistory,
+      { role: "user", content: messageContent }
+    ]);
+    if (limitError) {
+      showErrorState(limitError);
+      return;
+    }
     chatInput.value = "";
     chatInput.style.height = "auto";
-
-    const requestText = pendingCustomSelection && selectionActionContext
-      ? `${pl().custom}\n\n${pl().instruction}\n${userText}\n\n${PROMPT_SAFETY.wrapUntrustedContent(`${pl().selected}\n${selectionActionContext.text}`)}`
-      : userText;
-    const messageContent = attachCurrentPageContextIfRequested(requestText);
     pendingCustomSelection = false;
     conversationHistory.push({ role: "user", content: messageContent });
     appendUserBubble(userText);
@@ -2174,6 +2212,12 @@
 
   // Core stream request runner
   function executeStreamRequest() {
+    const requestLimitError = REQUEST_LIMITS.getConversationLimitError(conversationHistory);
+    if (requestLimitError) {
+      showErrorState(requestLimitError);
+      updateInputState(true);
+      return;
+    }
     stopCurrentGeneration();
     const requestId = ++currentStreamRequestId;
     isGenerating = true;
@@ -2400,7 +2444,16 @@
       });
     } else {
       errorTitle.textContent = fl().requestFailed;
-      errorMsg.textContent = message || fl().unexpected;
+      const lengthMessages = currentLocale === "zh-TW"
+        ? {
+            MESSAGE_TOO_LARGE: "這則訊息超過 40,000 字的限制。系統會保留網頁內容可分析的範圍；請縮短您的指令或選取文字。",
+            MESSAGE_LIMIT_EXCEEDED: "對話已超過訊息數或總長度上限。請開始新的對話後再試。"
+          }
+        : {
+            MESSAGE_TOO_LARGE: "This message exceeds the 40,000 character limit. Page content is bounded automatically; shorten your instruction or selection.",
+            MESSAGE_LIMIT_EXCEEDED: "This conversation exceeds the message count or total size limit. Start a new conversation and try again."
+          };
+      errorMsg.textContent = lengthMessages[code] || message || fl().unexpected;
       errorActions.innerHTML = `
         <button class="ws-btn-error-action" id="ws-btn-err-retry">${escapeHtml(fl().retryAction)}</button>
       `;

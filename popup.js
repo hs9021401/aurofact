@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } catch (err) {
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          files: ["i18n.js", "youtube-utils.js", "prompt-safety.js", "input-behavior.js", "content.js"]
+          files: ["i18n.js", "youtube-utils.js", "prompt-safety.js", "request-limits.js", "input-behavior.js", "standalone-context.js", "content.js"]
         });
         setTimeout(() => {
           chrome.tabs.sendMessage(tab.id, payload).catch((e) => {

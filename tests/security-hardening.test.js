@@ -15,6 +15,7 @@ assert.strictEqual(manifest.content_scripts, undefined);
 const context = { URL, console, setTimeout, clearTimeout };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(projectRoot, "profile-view.js"), "utf8"), context);
+vm.runInContext(fs.readFileSync(path.join(projectRoot, "request-limits.js"), "utf8"), context);
 vm.runInContext(fs.readFileSync(path.join(projectRoot, "profile-schema.js"), "utf8"), context);
 vm.runInContext(fs.readFileSync(path.join(projectRoot, "prompt-safety.js"), "utf8"), context);
 
@@ -69,9 +70,10 @@ assert.throws(
 );
 
 assert.throws(
-  () => vm.runInContext(`AurofactProfileSchema.prepareChatMessages([{ role: "user", content: "x".repeat(20001) }])`, context),
+  () => vm.runInContext(`AurofactProfileSchema.prepareChatMessages([{ role: "user", content: "x".repeat(40001) }])`, context),
   /message is too large/
 );
+assert.strictEqual(vm.runInContext(`AurofactProfileSchema.prepareChatMessages([{ role: "user", content: "x".repeat(40000) }])[0].content.length`, context), 40000);
 
 const backgroundSource = fs.readFileSync(path.join(projectRoot, "background.js"), "utf8");
 assert.match(backgroundSource, /prompt-safety\.js/);

@@ -2,6 +2,7 @@
 
 importScripts(
   "i18n.js",
+  "request-limits.js",
   "profile-view.js",
   "profile-schema.js",
   "prompt-safety.js",
@@ -478,7 +479,7 @@ async function sendSummaryToTab(tabId, payload) {
     try {
       await chrome.scripting.executeScript({
         target: { tabId },
-        files: ["i18n.js", "youtube-utils.js", "prompt-safety.js", "input-behavior.js", "standalone-context.js", "content.js"]
+        files: ["i18n.js", "youtube-utils.js", "prompt-safety.js", "request-limits.js", "input-behavior.js", "standalone-context.js", "content.js"]
       });
       setTimeout(() => {
         chrome.tabs.sendMessage(tabId, payload).catch((e) => {

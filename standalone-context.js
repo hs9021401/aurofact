@@ -17,7 +17,7 @@
     return Boolean(text) && PAGE_REFERENCE_PATTERNS.some((pattern) => pattern.test(text));
   }
 
-  function buildPageAwarePrompt(userRequest, extraction, labels, wrapUntrustedContent) {
+  function buildPageAwarePrompt(userRequest, extraction, labels, wrapUntrustedContent, buildBoundedPrompt) {
     const request = userRequest === null || userRequest === undefined
       ? ""
       : String(userRequest).trim();
@@ -30,10 +30,13 @@
       `${promptLabels.pageBody || "【Webpage body】"}`,
       source.text || ""
     ].join("\n");
+    if (typeof buildBoundedPrompt === "function") {
+      const result = buildBoundedPrompt(`${request}\n\n`, pageData);
+      return result ? result.content : null;
+    }
     const wrappedPageData = typeof wrapUntrustedContent === "function"
       ? wrapUntrustedContent(pageData)
       : pageData;
-
     return `${request}\n\n${wrappedPageData}`.trim();
   }
 
